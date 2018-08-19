@@ -29,8 +29,8 @@ execute_ctrl_bundle = {
     'alu_op': Bits(2),
     'funct3': Bits(3),
     'funct7': Bits(7),
-    'rs0': Bits(Log2Ceil(C['reg-count'])),
-    'rs1': Bits(Log2Ceil(C['reg-count']))
+    'rs1': Bits(Log2Ceil(C['reg-count'])),
+    'rs2': Bits(Log2Ceil(C['reg-count']))
 }
 
 execute_ctrl_bundle_reset = {
@@ -38,8 +38,8 @@ execute_ctrl_bundle_reset = {
     'alu_op': 0,
     'funct3': 0,
     'funct7': 0,
-    'rs0': 0,
-    'rs1': 0
+    'rs1': 0,
+    'rs2': 0
 }
 
 alu_flags = {
@@ -115,6 +115,7 @@ id_ex_bundle_reset = {
 ex_mem_bundle = {
     'mem_ctrl': mem_ctrl_bundle,
     'wb_ctrl': writeback_ctrl_bundle,
+    'rs2_data': Bits(C['core-width']),
     'alu_result': Bits(C['core-width']),
     'alu_flags': alu_flags
 }
@@ -122,11 +123,15 @@ ex_mem_bundle = {
 ex_mem_bundle_reset = {
     'mem_ctrl': mem_ctrl_bundle_reset,
     'wb_ctrl': writeback_ctrl_bundle_reset,
+    'rs2_data': 0,
     'alu_result': 0,
     'alu_flags': alu_flags_reset
 }
 
 mem_wb_bundle = {
     'wb_ctrl': writeback_ctrl_bundle
+}
 
+mem_wb_bundle_reset = {
+    'wb_ctrl': writeback_ctrl_bundle_reset
 }

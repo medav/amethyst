@@ -88,6 +88,7 @@ def ExecuteStage():
     alu.op1 <<= io.id_ex.rs2_data
     alu.alu_inst <<= AluInst.ADD
 
+    io.ex_mem.rs2_data <<= io.id_ex.rs2_data
     io.ex_mem.alu_result <<= alu.result
     io.ex_mem.alu_flags <<= alu.flags
 

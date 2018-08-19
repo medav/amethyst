@@ -118,20 +118,28 @@ def SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl):
     wb_ctrl.mem_to_reg <<= 1 if inst_spec.mem_to_reg else 0
 
 def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
+    opcode = Opcode(inst)
+    funct3 = Funct3(inst)
+    funct7 = Funct7(inst)
+    rs1 = Rs1(inst)
+    rs2 = Rs2(inst)
+    rd = Rd(inst)
+
     itype <<= 0
 
     ex_ctrl.alu_src <<= 0
     ex_ctrl.alu_op <<= 0
+    ex_ctrl.funct3 <<= funct3
+    ex_ctrl.funct7 <<= funct7
+    ex_ctrl.rs1 <<= rs1
+    ex_ctrl.rs2 <<= rs2
 
     mem_ctrl.branch <<= 0
     mem_ctrl.mem_write <<= 0
     mem_ctrl.mem_read <<= 0
 
     wb_ctrl.mem_to_reg <<= 0
-
-    opcode = Opcode(inst)
-    funct3 = Funct3(inst)
-    funct7 = Funct7(inst)
+    wb_ctrl.rd <<= rd
 
     for name in instructions:
         inst_spec = instructions[name]
