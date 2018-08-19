@@ -12,4 +12,8 @@ def IFetchStage():
         'if_id': Output(if_id_bundle),
     })
 
-    pc = Reg()
+    pc = Reg(Bits(C['core-width']))
+
+    io.if_id.inst <<= 0
+
+    NameSignals(locals())
