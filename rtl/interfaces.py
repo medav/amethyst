@@ -92,7 +92,14 @@ id_ex_bundle_reset = {
 
 ex_mem_bundle = {
     'mem_ctrl': mem_ctrl_bundle,
-    'wb_ctrl': writeback_ctrl_bundle
+    'wb_ctrl': writeback_ctrl_bundle,
+    'alu_result': Bits(C['core-width'])
+}
+
+ex_mem_bundle_reset = {
+    'mem_ctrl': mem_ctrl_bundle_reset,
+    'wb_ctrl': writeback_ctrl_bundle_reset,
+    'alu_result': 0
 }
 
 mem_wb_bundle = {

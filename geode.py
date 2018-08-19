@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.append('./src')
+sys.path.append('./rtl')
 
 from atlas import *
 from config import config as C
