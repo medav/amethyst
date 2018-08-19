@@ -1,4 +1,5 @@
 {
     "core-width": 64,
-    "reg-count": 32
+    "reg-count": 32,
+    "paddr-width": 64
 }
