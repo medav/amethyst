@@ -12,6 +12,21 @@ class AluInst(object):
     ADD = 0b0010
     SUB = 0b0110
 
+class BitSumOperator(AtlasOperator):
+    def __init__(self, bits):
+        super().__init__('bitsum')
+        self.bit_vec = [bits(i, i) for i in range(bits.width)]
+        self.RegisterSignal(Signal(Bits(Log2Ceil(bits.width))))
+
+    def Declare(self):
+        VDeclWire(self.result)
+
+    def Synthesize(self):
+        add_str = ' + '.join([VName(bit) for bit in self.bit_vec])
+        VAssignRaw(VName(self.result), add_str)
+
+def BitSum(bits):
+    return BitSumOperator(bits).result
 
 @Module
 def ArithmeticLogicUnit():
@@ -19,27 +34,41 @@ def ArithmeticLogicUnit():
         'op0': Input(Bits(C['core-width'])),
         'op1': Input(Bits(C['core-width'])),
         'alu_inst': Input(Bits(AluInst.width)),
-        'result': Output(Bits(C['core-width']))
+        'result': Output(Bits(C['core-width'])),
+        'flags': Output(alu_flags)
     })
 
-    and_result = io.op0 & io.op1
-    or_result = io.op0 | io.op1
-    add_result = io.op0 + io.op1
-    sub_result = io.op0 - io.op1
+    zero = Wire(Bits(C['core-width']))
 
-    io.result <<= 0
+    op0_ex = Cat([zero, io.op0])
+    op1_ex = Cat([zero, io.op1])
+
+    and_result = op0_ex & op1_ex
+    or_result = op0_ex | op1_ex
+    add_result = op0_ex + op1_ex
+    sub_result = op0_ex - op1_ex
+
+
+    result = Wire(Bits(C['core-width'] * 2))
+    io.result <<= result(C['core-width'] - 1, 0)
+
+    result <<= 0
+
+    io.flags.zero <<= (result == 0)
+    io.flags.sign <<= result(result.width - 1, result.width - 1)
+    io.flags.overflow <<= BitSum(result(result.width - 1, C['core-width'])) != 0
 
     with io.alu_inst == AluInst.AND:
-        io.result <<= and_result
+        result <<= and_result
 
     with io.alu_inst == AluInst.OR:
-        io.result <<= or_result
+        result <<= or_result
 
     with io.alu_inst == AluInst.ADD:
-        io.result <<= add_result
+        result <<= add_result
 
     with io.alu_inst == AluInst.SUB:
-        io.result <<= sub_result
+        result <<= sub_result
 
     NameSignals(locals())
 
@@ -60,5 +89,6 @@ def ExecuteStage():
     alu.alu_inst <<= AluInst.ADD
 
     io.ex_mem.alu_result <<= alu.result
+    io.ex_mem.alu_flags <<= alu.flags
 
     NameSignals(locals())

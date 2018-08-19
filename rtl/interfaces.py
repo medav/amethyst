@@ -7,7 +7,17 @@ from config import config as C
 
 imem_bundle = {
     'r_addr': Bits(C['paddr-width']),
-    'r_data': Bits(C['paddr-width'])
+    'r_data': Flip(Bits(C['core-width'])),
+    'r_en': Bits(1)
+}
+
+dmem_bundle = {
+    'r_addr': Bits(C['paddr-width']),
+    'r_data': Flip(Bits(C['core-width'])),
+    'r_en': Bits(1),
+    'w_addr': Bits(C['paddr-width']),
+    'w_data': Bits(C['core-width']),
+    'w_en': Bits(1)
 }
 
 #
@@ -30,6 +40,18 @@ execute_ctrl_bundle_reset = {
     'funct7': 0,
     'rs0': 0,
     'rs1': 0
+}
+
+alu_flags = {
+    'zero': Bits(1),
+    'sign': Bits(1),
+    'overflow': Bits(1)
+}
+
+alu_flags_reset = {
+    'zero': 0,
+    'sign': 0,
+    'overflow': 0
 }
 
 mem_ctrl_bundle = {
@@ -93,13 +115,15 @@ id_ex_bundle_reset = {
 ex_mem_bundle = {
     'mem_ctrl': mem_ctrl_bundle,
     'wb_ctrl': writeback_ctrl_bundle,
-    'alu_result': Bits(C['core-width'])
+    'alu_result': Bits(C['core-width']),
+    'alu_flags': alu_flags
 }
 
 ex_mem_bundle_reset = {
     'mem_ctrl': mem_ctrl_bundle_reset,
     'wb_ctrl': writeback_ctrl_bundle_reset,
-    'alu_result': 0
+    'alu_result': 0,
+    'alu_flags': alu_flags_reset
 }
 
 mem_wb_bundle = {
