@@ -15,6 +15,7 @@ def MemStage():
     })
 
     io.mem_wb.wb_ctrl <<= io.ex_mem.wb_ctrl
+    io.mem_wb.inst_data <<= io.ex_mem.inst_data
 
     io.dmem.r_addr <<= io.ex_mem.alu_result
     io.dmem.r_en <<= io.ex_mem.mem_ctrl.mem_read

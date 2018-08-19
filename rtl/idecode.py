@@ -121,9 +121,6 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
     opcode = Opcode(inst)
     funct3 = Funct3(inst)
     funct7 = Funct7(inst)
-    rs1 = Rs1(inst)
-    rs2 = Rs2(inst)
-    rd = Rd(inst)
 
     itype <<= 0
 
@@ -131,15 +128,12 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
     ex_ctrl.alu_op <<= 0
     ex_ctrl.funct3 <<= funct3
     ex_ctrl.funct7 <<= funct7
-    ex_ctrl.rs1 <<= rs1
-    ex_ctrl.rs2 <<= rs2
 
     mem_ctrl.branch <<= 0
     mem_ctrl.mem_write <<= 0
     mem_ctrl.mem_read <<= 0
 
     wb_ctrl.mem_to_reg <<= 0
-    wb_ctrl.rd <<= rd
 
     for name in instructions:
         inst_spec = instructions[name]
@@ -227,6 +221,10 @@ def IDecodeStage():
     regfile.w0_addr <<= io.reg_write.w_addr
     regfile.w0_en <<= io.reg_write.w_en
     regfile.w0_data <<= io.reg_write.w_data
+
+    io.id_ex.inst_data.rs1 <<= Rs1(io.if_id.inst)
+    io.id_ex.inst_data.rs2 <<= Rs2(io.if_id.inst)
+    io.id_ex.inst_data.rd <<= Rd(io.if_id.inst)
 
     io.id_ex.rs1_data <<= regfile.r0_data
     io.id_ex.rs2_data <<= regfile.r1_data

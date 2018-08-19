@@ -12,7 +12,7 @@ def WritebackStage():
         'reg_write': Output(reg_write_bundle)
     })
 
-    io.reg_write.w_addr <<= io.mem_wb.wb_ctrl.rd
+    io.reg_write.w_addr <<= io.mem_wb.inst_data.rd
     io.reg_write.w_data <<= io.mem_read_data
     io.reg_write.w_en <<= io.mem_wb.wb_ctrl.mem_to_reg
 

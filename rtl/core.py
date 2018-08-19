@@ -7,6 +7,8 @@ import idecode
 import execute
 import mem
 import writeback
+import forward
+import hazard
 
 @Module
 def Core():
@@ -35,17 +37,45 @@ def Core():
     mem_wb_reg = Reg(mem_wb_bundle, reset_value=mem_wb_bundle_reset)
 
     #
+    # Forward Unit
+    #
+
+    fwd = Instance(forward.ForwardUnit())
+    fwd.ex_rs1 <<= id_ex_reg.inst_data.rs1
+    fwd.ex_rs2 <<= id_ex_reg.inst_data.rs2
+    fwd.mem_rd <<= ex_mem_reg.inst_data.rd
+    fwd.wb_rd <<= mem_wb_reg.inst_data.rd
+
+    #
+    # Hazard Unit
+    #
+
+    hzd = Instance(hazard.HazardUnit())
+    hzd.ex_mem_read <<= id_ex_reg.mem_ctrl.mem_read
+    hzd.ex_rd <<= id_ex_reg.inst_data.rd
+    hzd.id_rs1 <<= idecode_stage.id_ex.inst_data.rs1
+    hzd.id_rs2 <<= idecode_stage.id_ex.inst_data.rs2
+
+    #
     # IFetch Stage
     #
 
-    if_id_reg <<= ifetch_stage.if_id
+    with ~hzd.data_hazard:
+        if_id_reg <<= ifetch_stage.if_id
 
     #
     # IDecode Stage
     #
 
     idecode_stage.if_id <<= if_id_reg
-    id_ex_reg <<= idecode_stage.id_ex
+
+    with hzd.data_hazard:
+        id_ex_reg.ex_ctrl <<= execute_ctrl_bundle_reset
+        id_ex_reg.mem_ctrl <<= mem_ctrl_bundle_reset
+        id_ex_reg.wb_ctrl <<= writeback_ctrl_bundle_reset
+
+    with otherwise:
+        id_ex_reg <<= idecode_stage.id_ex
 
     idecode_stage.reg_write <<= writeback_stage.reg_write
 
@@ -55,6 +85,11 @@ def Core():
 
     execute_stage.id_ex <<= id_ex_reg
     ex_mem_reg <<= execute_stage.ex_mem
+
+    execute_stage.fwd1_select <<= fwd.fwd1_select
+    execute_stage.fwd2_select <<= fwd.fwd2_select
+    execute_stage.fwd_mem_data <<= ex_mem_reg.alu_result
+    execute_stage.fwd_wb_data <<= mem_stage.read_data
 
     #
     # Mem Stage
@@ -68,5 +103,6 @@ def Core():
     #
 
     writeback_stage.mem_wb <<= mem_wb_reg
+    writeback_stage.mem_read_data <<= mem_stage.read_data
 
     NameSignals(locals())
