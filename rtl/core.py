@@ -60,6 +60,10 @@ def Core():
     # IFetch Stage
     #
 
+    io.imem.r_addr <<= ifetch_stage.imem.r_addr
+    io.imem.r_en <<= ifetch_stage.imem.r_en
+    ifetch_stage.imem.r_data <<= io.imem.r_data
+
     with ~hzd.data_hazard:
         if_id_reg <<= ifetch_stage.if_id
 
@@ -95,6 +99,14 @@ def Core():
     #
     # Mem Stage
     #
+
+    io.dmem.r_addr <<= mem_stage.dmem.r_addr
+    io.dmem.r_en <<= mem_stage.dmem.r_en
+    mem_stage.dmem.r_data <<= io.dmem.r_data
+
+    io.dmem.w_addr <<= mem_stage.dmem.w_addr
+    io.dmem.w_en <<= mem_stage.dmem.w_en
+    io.dmem.w_addr <<= mem_stage.dmem.w_addr
 
     mem_stage.ex_mem <<= ex_mem_reg
     mem_wb_reg <<= mem_stage.mem_wb
