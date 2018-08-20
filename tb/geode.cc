@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     vcd->open("dump.vcd");
 
     top->io_reset = 1;
+    top->io_imem_r_data = 0x00000013;
 
     while (simtime < 10000) {
         if (simtime > 10) {
