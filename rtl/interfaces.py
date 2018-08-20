@@ -7,7 +7,7 @@ from config import config as C
 
 imem_bundle = {
     'r_addr': Bits(C['paddr-width']),
-    'r_data': Flip(Bits(C['core-width'])),
+    'r_data': Flip(Bits(32)),
     'r_en': Bits(1)
 }
 
@@ -25,12 +25,16 @@ dmem_bundle = {
 #
 
 inst_data_bundle = {
+    'inst': Bits(32),
+    'pc': Bits(C['paddr-width']),
     'rs1': Bits(Log2Ceil(C['reg-count'])),
     'rs2': Bits(Log2Ceil(C['reg-count'])),
     'rd': Bits(Log2Ceil(C['reg-count']))
 }
 
 inst_data_bundle_reset = {
+    'inst': 0,
+    'pc': 0,
     'rs1': 0,
     'rs2': 0,
     'rd': 0
@@ -93,11 +97,11 @@ reg_write_bundle = {
 #
 
 if_id_bundle = {
-    'inst': Bits(32)
+    'pc': Bits(C['paddr-width'])
 }
 
 if_id_bundle_reset = {
-    'inst': 0
+    'pc': 0
 }
 
 id_ex_bundle = {
@@ -124,6 +128,7 @@ ex_mem_bundle = {
     'mem_ctrl': mem_ctrl_bundle,
     'wb_ctrl': writeback_ctrl_bundle,
     'inst_data': inst_data_bundle,
+    'branch_target': Bits(C['paddr-width']),
     'rs2_data': Bits(C['core-width']),
     'alu_result': Bits(C['core-width']),
     'alu_flags': alu_flags
@@ -133,6 +138,7 @@ ex_mem_bundle_reset = {
     'mem_ctrl': mem_ctrl_bundle_reset,
     'wb_ctrl': writeback_ctrl_bundle_reset,
     'inst_data': inst_data_bundle_reset,
+    'branch_target': 0,
     'rs2_data': 0,
     'alu_result': 0,
     'alu_flags': alu_flags_reset
@@ -140,10 +146,12 @@ ex_mem_bundle_reset = {
 
 mem_wb_bundle = {
     'wb_ctrl': writeback_ctrl_bundle,
-    'inst_data': inst_data_bundle
+    'inst_data': inst_data_bundle,
+    'alu_result': Bits(C['core-width']),
 }
 
 mem_wb_bundle_reset = {
     'wb_ctrl': writeback_ctrl_bundle_reset,
-    'inst_data': inst_data_bundle_reset
+    'inst_data': inst_data_bundle_reset,
+    'alu_result': 0
 }

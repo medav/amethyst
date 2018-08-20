@@ -16,5 +16,5 @@ with geode:
 
 geode.SetTop(top)
 print('Synthesizing...')
-EmitCircuit(geode, 'geode.v')
+EmitCircuit(geode, 'build/atlas-gen/geode.v')
 print('Done!')

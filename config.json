@@ -1,5 +1,6 @@
 {
     "core-width": 64,
     "reg-count": 32,
-    "paddr-width": 64
+    "paddr-width": 64,
+    "reset-addr": 0
 }

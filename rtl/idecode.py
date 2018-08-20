@@ -6,6 +6,33 @@ from interfaces import *
 from common import *
 from regfile import *
 
+class Opcodes(object):
+    LOAD = 0b0000011
+    STORE = 0b0100011
+    MADD = 0b1000011
+    BRANCH = 0b1100011
+    LOADFP = 0b0000111
+    STOREFP = 0b0100111
+    MSUB = 0b1000111
+    JALR = 0b1100111
+    CUSTOM0 = 0b0001011
+    CUSTOM1 = 0b0101011
+    NMSUB = 0b1001011
+    MISCMEM = 0b0001111
+    AMO = 0b0101111
+    NMADD = 0b1001111
+    JAL = 0b1101111
+    OPIMM = 0b0010011
+    OP = 0b0110011
+    OPFP = 0b1010011
+    SYSTEM = 0b1110011
+    AUIPC = 0b0010111
+    LUI = 0b0110111
+    OPIMM32 = 0b0011011
+    OP32 = 0b0111011
+    CUSTOM2 = 0b1011011
+    CUSTOM3 = 0b1111011
+
 @dataclass
 class Inst(object):
     # Data to match against
@@ -34,67 +61,67 @@ instructions = {
     # R-Type Instructions
     #
 
-    'add': Inst(0b0110011, 0b000, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'sub': Inst(0b0110011, 0b000, 0b0100000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'sll': Inst(0b0110011, 0b001, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'xor': Inst(0b0110011, 0b100, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'srl': Inst(0b0110011, 0b101, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'or': Inst(0b0110011, 0b110, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'and': Inst(0b0110011, 0b111, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    # 'lr.d': Inst(0b0110011, 0b011, 0b0001000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    # 'sc.d': Inst(0b0110011, 0b011, 0b0001100, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    'add': Inst(Opcodes.OP, 0b000, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    'sub': Inst(Opcodes.OP, 0b000, 0b0100000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    'sll': Inst(Opcodes.OP, 0b001, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    'xor': Inst(Opcodes.OP, 0b100, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    'srl': Inst(Opcodes.OP, 0b101, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    'or': Inst(Opcodes.OP, 0b110, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    'and': Inst(Opcodes.OP, 0b111, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    # 'lr.d': Inst(Opcodes.OP, 0b011, 0b0001000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
+    # 'sc.d': Inst(Opcodes.OP, 0b011, 0b0001100, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
 
     #
     # I-Type Instructions
     #
 
-    'lb': Inst(0b0000011, 0b000, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lh': Inst(0b0000011, 0b001, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lw': Inst(0b0000011, 0b010, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'ld': Inst(0b0000011, 0b011, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lbu': Inst(0b0000011, 0b100, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lhu': Inst(0b0000011, 0b101, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lwu': Inst(0b0000011, 0b110, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'addi': Inst(0b0010011, 0b000, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'slli': Inst(0b0010011, 0b001, 0b0000000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'xori': Inst(0b0010011, 0b100, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'srli': Inst(0b0010011, 0b101, 0b0000000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'srai': Inst(0b0010011, 0b101, 0b0100000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'ori': Inst(0b0010011, 0b110, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'andi': Inst(0b0010011, 0b111, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'jalr': Inst(0b1100111, 0b000, None, ITypes.I, AluSrc.RS2, 0b00, False, False, False, False),
+    'lb': Inst(Opcodes.LOAD, 0b000, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
+    'lh': Inst(Opcodes.LOAD, 0b001, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
+    'lw': Inst(Opcodes.LOAD, 0b010, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
+    'ld': Inst(Opcodes.LOAD, 0b011, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
+    'lbu': Inst(Opcodes.LOAD, 0b100, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
+    'lhu': Inst(Opcodes.LOAD, 0b101, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
+    'lwu': Inst(Opcodes.LOAD, 0b110, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
+    'addi': Inst(Opcodes.OPIMM, 0b000, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
+    'slli': Inst(Opcodes.OPIMM, 0b001, 0b0000000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
+    'xori': Inst(Opcodes.OPIMM, 0b100, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
+    'srli': Inst(Opcodes.OPIMM, 0b101, 0b0000000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
+    'srai': Inst(Opcodes.OPIMM, 0b101, 0b0100000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
+    'ori': Inst(Opcodes.OPIMM, 0b110, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
+    'andi': Inst(Opcodes.OPIMM, 0b111, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
+    'jalr': Inst(Opcodes.JALR, 0b000, None, ITypes.I, AluSrc.RS2, 0b00, False, False, False, False),
 
     #
     # S-Type Instructions
     #
 
-    'sb': Inst(0b0100011, 0b000, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
-    'sh': Inst(0b0100011, 0b001, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
-    'sw': Inst(0b0100011, 0b010, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
-    'sd': Inst(0b0100011, 0b111, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
+    'sb': Inst(Opcodes.STORE, 0b000, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
+    'sh': Inst(Opcodes.STORE, 0b001, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
+    'sw': Inst(Opcodes.STORE, 0b010, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
+    'sd': Inst(Opcodes.STORE, 0b111, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
 
     #
     # B-Type Instructions
     #
 
-    'beq': Inst(0b1100011, 0b000, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bne': Inst(0b1100011, 0b001, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'blt': Inst(0b1100011, 0b100, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bge': Inst(0b1100011, 0b101, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bltu': Inst(0b1100011, 0b110, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bgeu': Inst(0b1100011, 0b111, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
+    'beq': Inst(Opcodes.BRANCH, 0b000, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
+    'bne': Inst(Opcodes.BRANCH, 0b001, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
+    'blt': Inst(Opcodes.BRANCH, 0b100, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
+    'bge': Inst(Opcodes.BRANCH, 0b101, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
+    'bltu': Inst(Opcodes.BRANCH, 0b110, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
+    'bgeu': Inst(Opcodes.BRANCH, 0b111, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
 
     #
     # U-Type Instructions
     #
 
-    'lui': Inst(0b0110111, None, None, ITypes.U, AluSrc.RS2, 0b00, False, False, False, False),
+    'lui': Inst(Opcodes.LUI, None, None, ITypes.U, AluSrc.RS2, 0b00, False, False, False, False),
 
     #
     # J-Type Instructions
     #
 
-    'jal': Inst(0b1101111, None, None, ITypes.J, AluSrc.RS2, 0b00, True, False, False, False),
+    'jal': Inst(Opcodes.JAL, None, None, ITypes.J, AluSrc.RS2, 0b00, True, False, False, False),
 }
 
 
@@ -169,8 +196,7 @@ def GenerateImmediate(inst, itype):
         imm <<= Cat([
             Fill(inst(31, 31), 21),
             inst(30, 25),
-            inst(11, 8),
-            inst(7, 7)
+            inst(11, 7)
         ])
 
     with itype == ITypes.B:
@@ -184,10 +210,8 @@ def GenerateImmediate(inst, itype):
 
     with itype == ITypes.U:
         imm <<= Cat([
-            inst(31, 31),
-            inst(30, 20),
-            inst(19, 12),
-            Fill(zero, 13)
+            inst(31, 12),
+            Fill(zero, 12)
         ])
 
     with itype == ITypes.J:
@@ -207,6 +231,7 @@ def GenerateImmediate(inst, itype):
 def IDecodeStage():
     io = Io({
         'if_id': Input(if_id_bundle),
+        'inst': Input(Bits(32)),
         'reg_write': Input(reg_write_bundle),
         'id_ex': Output(id_ex_bundle)
     })
@@ -215,27 +240,29 @@ def IDecodeStage():
 
     itype = Wire(Bits(ITypes.bitwidth))
 
-    regfile.r0_addr <<= Rs1(io.if_id.inst)
-    regfile.r1_addr <<= Rs2(io.if_id.inst)
+    regfile.r0_addr <<= Rs1(io.inst)
+    regfile.r1_addr <<= Rs2(io.inst)
 
     regfile.w0_addr <<= io.reg_write.w_addr
     regfile.w0_en <<= io.reg_write.w_en
     regfile.w0_data <<= io.reg_write.w_data
 
-    io.id_ex.inst_data.rs1 <<= Rs1(io.if_id.inst)
-    io.id_ex.inst_data.rs2 <<= Rs2(io.if_id.inst)
-    io.id_ex.inst_data.rd <<= Rd(io.if_id.inst)
+    io.id_ex.inst_data.inst <<= io.inst
+    io.id_ex.inst_data.pc <<= io.if_id.pc
+    io.id_ex.inst_data.rs1 <<= Rs1(io.inst)
+    io.id_ex.inst_data.rs2 <<= Rs2(io.inst)
+    io.id_ex.inst_data.rd <<= Rd(io.inst)
 
     io.id_ex.rs1_data <<= regfile.r0_data
     io.id_ex.rs2_data <<= regfile.r1_data
 
     Control(
-        io.if_id.inst,
+        io.inst,
         itype,
         io.id_ex.ex_ctrl,
         io.id_ex.mem_ctrl,
         io.id_ex.wb_ctrl)
 
-    io.id_ex.imm <<= GenerateImmediate(io.if_id.inst, itype)
+    io.id_ex.imm <<= GenerateImmediate(io.inst, itype)
 
     NameSignals(locals())

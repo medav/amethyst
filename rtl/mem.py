@@ -10,12 +10,18 @@ def MemStage():
     io = Io({
         'ex_mem': Input(ex_mem_bundle),
         'dmem': Output(dmem_bundle),
+        'branch': Output(Bits(1)),
+        'branch_target': Output(Bits(C['paddr-width'])),
         'mem_wb': Output(mem_wb_bundle),
         'read_data': Output(Bits(C['core-width']))
     })
 
     io.mem_wb.wb_ctrl <<= io.ex_mem.wb_ctrl
     io.mem_wb.inst_data <<= io.ex_mem.inst_data
+    io.mem_wb.alu_result <<= io.ex_mem.alu_result
+
+    io.branch <<= io.ex_mem.mem_ctrl.branch
+    io.branch_target <<= io.ex_mem.branch_target
 
     io.dmem.r_addr <<= io.ex_mem.alu_result
     io.dmem.r_en <<= io.ex_mem.mem_ctrl.mem_read

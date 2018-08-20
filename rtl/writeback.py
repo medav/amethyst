@@ -13,7 +13,12 @@ def WritebackStage():
     })
 
     io.reg_write.w_addr <<= io.mem_wb.inst_data.rd
-    io.reg_write.w_data <<= io.mem_read_data
-    io.reg_write.w_en <<= io.mem_wb.wb_ctrl.mem_to_reg
+
+    with io.mem_wb.wb_ctrl.mem_to_reg:
+        io.reg_write.w_data <<= io.mem_read_data
+    with otherwise:
+        io.reg_write.w_data <<= io.mem_wb.alu_result
+
+    io.reg_write.w_en <<= 1
 
     NameSignals(locals())

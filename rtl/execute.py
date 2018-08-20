@@ -15,22 +15,25 @@ class AluInst(object):
     OR = 0b0001
     ADD = 0b0010
     SUB = 0b0110
+    XOR = 0b0101
+    SRL = 0b1000
+    SLL = 0b1001
 
-class BitSumOperator(AtlasOperator):
+class BitOrReduceOperator(AtlasOperator):
     def __init__(self, bits):
         super().__init__('bitsum')
         self.bit_vec = [bits(i, i) for i in range(bits.width)]
-        self.RegisterSignal(Signal(Bits(Log2Ceil(bits.width))))
+        self.RegisterSignal(Signal(Bits(1)))
 
     def Declare(self):
         VDeclWire(self.result)
 
     def Synthesize(self):
-        add_str = ' + '.join([VName(bit) for bit in self.bit_vec])
+        add_str = ' | '.join([VName(bit) for bit in self.bit_vec])
         VAssignRaw(VName(self.result), add_str)
 
-def BitSum(bits):
-    return BitSumOperator(bits).result
+def BitOrReduce(bits):
+    return BitOrReduceOperator(bits).result
 
 @Module
 def ArithmeticLogicUnit():
@@ -43,15 +46,20 @@ def ArithmeticLogicUnit():
     })
 
     zero = Wire(Bits(C['core-width']))
+    shift_op = Wire(Bits(1))
 
     op0_ex = Cat([zero, io.op0])
     op1_ex = Cat([zero, io.op1])
+
+    # TODO: Comment here about why this works
+    shamt = io.op1(5, 0)
 
     and_result = op0_ex & op1_ex
     or_result = op0_ex | op1_ex
     add_result = op0_ex + op1_ex
     sub_result = op0_ex - op1_ex
-
+    sll_result = io.op0 << shamt
+    srl_result = io.op0 >> shamt
 
     result = Wire(Bits(C['core-width'] * 2))
     io.result <<= result(C['core-width'] - 1, 0)
@@ -60,7 +68,7 @@ def ArithmeticLogicUnit():
 
     io.flags.zero <<= (result == 0)
     io.flags.sign <<= result(result.width - 1, result.width - 1)
-    io.flags.overflow <<= BitSum(result(result.width - 1, C['core-width'])) != 0
+    io.flags.overflow <<= BitOrReduce(result(result.width - 1, C['core-width']))
 
     with io.alu_inst == AluInst.AND:
         result <<= and_result
@@ -73,6 +81,12 @@ def ArithmeticLogicUnit():
 
     with io.alu_inst == AluInst.SUB:
         result <<= sub_result
+
+    with io.alu_inst == AluInst.SLL:
+        result <<= Cat([zero, sll_result])
+
+    with io.alu_inst == AluInst.SRL:
+        result <<= Cat([zero, srl_result])
 
     NameSignals(locals())
 
@@ -90,7 +104,11 @@ class AluInstSpec(object):
 alu_instructions = [
     AluInstSpec(0, 0, None, None, AluInst.ADD),
     AluInstSpec(None, 0, None, None, AluInst.SUB),
+
     AluInstSpec(1, None, 0b0000000, 0b000, AluInst.ADD),
+    AluInstSpec(1, None, 0b0000000, 0b001, AluInst.SLL),
+    AluInstSpec(1, None, 0b0000000, 0b100, AluInst.XOR),
+    AluInstSpec(1, None, 0b0000000, 0b101, AluInst.SRL),
     AluInstSpec(1, None, 0b0100000, 0b000, AluInst.SUB),
     AluInstSpec(1, None, 0b0000000, 0b111, AluInst.AND),
     AluInstSpec(1, None, 0b0000000, 0b110, AluInst.OR),
@@ -133,6 +151,12 @@ def ExecuteStage():
     io.ex_mem.inst_data <<= io.id_ex.inst_data
 
     alu = Instance(ArithmeticLogicUnit())
+
+    #
+    # Branch Target Generation
+    #
+
+    io.ex_mem.branch_target <<= io.id_ex.inst_data.pc + io.id_ex.imm
 
     #
     # Forwarding Logic

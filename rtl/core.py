@@ -68,6 +68,7 @@ def Core():
     #
 
     idecode_stage.if_id <<= if_id_reg
+    idecode_stage.inst <<= ifetch_stage.inst
 
     with hzd.data_hazard:
         id_ex_reg.ex_ctrl <<= execute_ctrl_bundle_reset
