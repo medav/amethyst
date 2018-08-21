@@ -93,8 +93,8 @@ def ArithmeticLogicUnit():
 @dataclass
 class AluInstSpec(object):
     # Inputs to match
-    alu_op0 : int
     alu_op1 : int
+    alu_op0 : int
     funct7 : int
     funct3 : int
 
@@ -103,7 +103,7 @@ class AluInstSpec(object):
 
 alu_instructions = [
     AluInstSpec(0, 0, None, None, AluInst.ADD),
-    AluInstSpec(None, 0, None, None, AluInst.SUB),
+    AluInstSpec(None, 1, None, None, AluInst.SUB),
 
     AluInstSpec(1, None, 0b0000000, 0b000, AluInst.ADD),
     AluInstSpec(1, None, 0b0000000, 0b001, AluInst.SLL),
@@ -123,6 +123,8 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
     true_wire = Wire(Bits(1))
     true_wire <<= 1
 
+    NameSignals(locals())
+
     for inst_spec in alu_instructions:
 
         alu_op0_match = true_wire if inst_spec.alu_op0 is None else alu_op0 == inst_spec.alu_op0
@@ -133,7 +135,7 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
         with alu_op0_match & alu_op1_match & funct3_match & funct7_match:
             alu_inst <<= inst_spec.alu_inst
 
-    NameSignals(locals())
+
 
 @Module
 def ExecuteStage():

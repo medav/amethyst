@@ -45,6 +45,8 @@ def Core():
     fwd.ex_rs2 <<= id_ex_reg.inst_data.rs2
     fwd.mem_rd <<= ex_mem_reg.inst_data.rd
     fwd.wb_rd <<= mem_wb_reg.inst_data.rd
+    fwd.mem_reg_write <<= 1
+    fwd.wb_reg_write <<= 1
 
     #
     # Hazard Unit
@@ -94,7 +96,7 @@ def Core():
     execute_stage.fwd1_select <<= fwd.fwd1_select
     execute_stage.fwd2_select <<= fwd.fwd2_select
     execute_stage.fwd_mem_data <<= ex_mem_reg.alu_result
-    execute_stage.fwd_wb_data <<= mem_stage.read_data
+    execute_stage.fwd_wb_data <<= writeback_stage.reg_write.w_data
 
     #
     # Mem Stage
