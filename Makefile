@@ -15,9 +15,11 @@ VFLAGS= \
 	--Mdir build/verilator-gen \
 	--cc \
 	--top-module $(TOP) \
-	--clk io_clock \
 	--trace \
+	--output-split 24 \
 	--unroll-count 256 \
+	-Wno-STMTDLY \
+	--x-assign unique \
 	-O3 \
 	-CFLAGS "-O3" \
 	--savable \
