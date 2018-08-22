@@ -8,6 +8,15 @@ from config import config as C
 
 @Module
 def IFetchStage():
+    """The instruction fetch stage for Geode.
+
+    This stage contains the program counter register for the pipeline and
+    produces imem accesses to retrieve instructions.
+
+    branch and branch_target also signal when the PC needs to be altered due to
+    a branch instructions.
+    """
+
     io = Io({
         'if_id': Output(if_id_bundle),
         'inst': Output(Bits(32)),

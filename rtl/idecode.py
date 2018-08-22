@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from atlas import *
 from interfaces import *
 from common import *
-from regfile import *
 
 class Opcodes(object):
     LOAD = 0b0000011
@@ -124,6 +123,10 @@ instructions = {
     'jal': Inst(Opcodes.JAL, None, None, ITypes.J, AluSrc.RS2, 0b00, True, False, False, False),
 }
 
+#
+# Helper functions to retrieve information from an instruction. Note that the
+# only reason these are lambdas is because they're one-liners.
+#
 
 Opcode = lambda inst: inst(6, 0)
 Rd = lambda inst: inst(11, 7)
@@ -133,10 +136,17 @@ Funct3 = lambda inst: inst(14, 12)
 Funct7 = lambda inst: inst(31, 25)
 
 def SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl):
+    """Update given control signals based on inst_spec."""
+
     itype <<= inst_spec.itype
 
     ex_ctrl.alu_src <<= inst_spec.alu_src
     ex_ctrl.alu_op <<= inst_spec.alu_op
+
+    #
+    # N.B. Atlas doesn't currently support bool literals as contant values so
+    # just convert them to 1 / 0 here via Python ternarys.
+    #
 
     mem_ctrl.branch <<= 1 if inst_spec.branch else 0
     mem_ctrl.mem_write <<= 1 if inst_spec.mem_write else 0
@@ -145,9 +155,22 @@ def SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl):
     wb_ctrl.mem_to_reg <<= 1 if inst_spec.mem_to_reg else 0
 
 def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
+    """Primary control logic for Geode."""
+
+    #
+    # opcode, funct3 and func7 are computed once here so that duplicate verilog
+    # code isn't produced for every loop iteration below.
+    #
+
     opcode = Opcode(inst)
     funct3 = Funct3(inst)
     funct7 = Funct7(inst)
+
+    #
+    # Atlas requires all wire signals to be fully initialized or it fails in the
+    # emitter. An easy solution is to do a first assignment to a default value,
+    # and later assignments will take precedence.
+    #
 
     itype <<= 0
 
@@ -161,6 +184,13 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
     mem_ctrl.mem_read <<= 0
 
     wb_ctrl.mem_to_reg <<= 0
+
+    #
+    # This part here really shows the power / advantage of Atlas's meta-
+    # programming abilities. Each instruction declared above is considered, and
+    # a "match" signal is produced. Upon a match, the control signals for that
+    # function are assigned to the output of the idecode stage.
+    #
 
     for name in instructions:
         inst_spec = instructions[name]
@@ -179,7 +209,9 @@ def GenerateImmediate(inst, itype):
     zero <<= 0
 
     #
-    # N.B. This is taken directly from the RV spec.
+    # The immediate value is generated differently based on the decoded
+    # instruction type. This logic essentially will produce all immediates in
+    # parallel then select the result based on itype.
     #
 
     imm <<= 0
@@ -224,11 +256,62 @@ def GenerateImmediate(inst, itype):
             zero
         ])
 
+    #
+    # N.B. Since RISC-V guarantees the most significant bit of the immediate is
+    # always at isnt(31, 31), Sign extention can be computed in parallel /
+    # independent of itype. The Cat statement below combines the sign extension
+    # with the computed immediate value.
+    #
+
     NameSignals(locals())
     return Cat([Fill(inst(31, 31), 32), imm])
 
 @Module
+def RegisterFile():
+    """The primary register file for Geode.
+
+    This register file contains two read and one write port.
+    """
+
+    io = Io({
+        'r0_addr': Input(Bits(Log2Ceil(C['reg-count']))),
+        'r1_addr': Input(Bits(Log2Ceil(C['reg-count']))),
+        'w0_addr': Input(Bits(Log2Ceil(C['reg-count']))),
+        'w0_data': Input(Bits(C['core-width'])),
+        'w0_en' : Input(Bits(1)),
+        'r0_data': Output(Bits(C['core-width'])),
+        'r1_data': Output(Bits(C['core-width']))
+    })
+
+    reg_array = Reg(
+        [Bits(C['core-width']) for _ in range(C['reg-count'])],
+        reset_value=[0 for _ in range(C['reg-count'])])
+
+    with io.r0_addr == 0:
+        io.r0_data <<= 0
+    with otherwise:
+        io.r0_data <<= reg_array[io.r0_addr]
+
+    with io.r1_addr == 0:
+        io.r1_data <<= 0
+    with otherwise:
+        io.r1_data <<= reg_array[io.r1_addr]
+
+    with (io.w0_addr != 0) & io.w0_en:
+        reg_array[io.w0_addr] <<= io.w0_data
+
+    NameSignals(locals())
+
+@Module
 def IDecodeStage():
+    """The instruction decode stage for Geode.
+
+    This stage consumes the instruction produced by the most recent imem access
+    and produces control signals and a sign-extended immediate value. In
+    addition, this module contains the register file and produces read values
+    for register source data.
+    """
+
     io = Io({
         'if_id': Input(if_id_bundle),
         'inst': Input(Bits(32)),
@@ -247,14 +330,31 @@ def IDecodeStage():
     regfile.w0_en <<= io.reg_write.w_en
     regfile.w0_data <<= io.reg_write.w_data
 
+    #
+    # inst_data is metadata about the current instruction that is passed through
+    # the pipeline unrelated to control signals. It's primary use is for hazard
+    # detection and data forwarding.
+    #
+
     io.id_ex.inst_data.inst <<= io.inst
     io.id_ex.inst_data.pc <<= io.if_id.pc
     io.id_ex.inst_data.rs1 <<= Rs1(io.inst)
     io.id_ex.inst_data.rs2 <<= Rs2(io.inst)
     io.id_ex.inst_data.rd <<= Rd(io.inst)
 
+    #
+    # Hook up the register read outputs.
+    #
+
     io.id_ex.rs1_data <<= regfile.r0_data
     io.id_ex.rs2_data <<= regfile.r1_data
+
+    #
+    # Control is a Python function that produces the primary decode logic. It
+    # matches against a set of known instructions to produce control signals for
+    # later stages in the pipeline. The known instructions are encoded in the
+    # 'instructions' variable above.
+    #
 
     Control(
         io.inst,
@@ -262,6 +362,12 @@ def IDecodeStage():
         io.id_ex.ex_ctrl,
         io.id_ex.mem_ctrl,
         io.id_ex.wb_ctrl)
+
+    #
+    # GenerateImmediate produces logic that consume the itype (instruction
+    # type, which is R, I, S, B, U, or J) and produces the immediate value for
+    # this instruction.
+    #
 
     io.id_ex.imm <<= GenerateImmediate(io.inst, itype)
 

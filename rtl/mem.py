@@ -7,6 +7,16 @@ from config import config as C
 
 @Module
 def MemStage():
+    """The mem access stage for Geode.
+
+    This stage consumes the alu result and mem_ctrl signals to produce a
+    memory read or write (if required) so that the memory data can be passed on
+    to the writeback stage.
+
+    This stage also passes on the original alu_result to be used when the
+    current instruction is not a memory access.
+    """
+
     io = Io({
         'ex_mem': Input(ex_mem_bundle),
         'dmem': Output(dmem_bundle),
