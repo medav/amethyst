@@ -2,12 +2,17 @@
 
 VERILATOR=verilator
 
-BUILD_DIR=build
-TOP=Core
+TOP=GeodeCore
 
-AGENDIR=$(BUILD_DIR)/atlas-gen
+BUILDDIR=build
+VGENDIR=$(BUILDDIR)/verilator-gen
 
-VSRC=$(AGENDIR)/geode.v
+CXX=g++
+CXXINC= \
+	-I$(VERILATOR_ROOT)/include \
+	-I$(VGENDIR)
+
+VSRC=$(BUILDDIR)/geode.v
 TBSRC=tb/geode.cc
 VSIM=build/geode
 
@@ -26,25 +31,18 @@ VFLAGS= \
 	--exe $(abspath ./$(TBSRC)) \
 	-o $(abspath ./$(VSIM))
 
-VGENDIR=$(BUILD_DIR)/verilator-gen
-
-CXX=g++
-CXXINC= \
-	-I$(VERILATOR_ROOT)/include \
-	-I$(VGENDIR)
-
 default: $(VSIM)
 
 .PHONY: build-dirs clean
 
 build-dirs:
-	@mkdir -p $(AGENDIR)
+	@mkdir -p $(BUILDDIR)
 	@mkdir -p $(VGENDIR)
 
 $(VSIM): $(TBSRC) $(VSRC) | build-dirs
 	$(VERILATOR) $(VFLAGS) $(VSRC)
-	make -C $(VGENDIR) -j12 -f V$(TOP).mk
+	$(MAKE) -C $(VGENDIR) -f V$(TOP).mk
 
 clean:
-	rm -r build/verilator-gen
-	rm build/geode
+	@rm -r build/verilator-gen
+	@rm build/geode

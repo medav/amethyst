@@ -4,7 +4,7 @@
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
-#include "VCore.h"
+#include "VGeodeCore.h"
 
 #define MEMSIZE 4096
 
@@ -14,7 +14,7 @@ double sc_time_stamp() {
     return simtime;
 }
 
-void HandleIMem(VCore * top, uint8_t * mem, uint64_t raddr, uint8_t ren) {
+void HandleIMem(VGeodeCore * top, uint8_t * mem, uint64_t raddr, uint8_t ren) {
     uint64_t addr;
 
     if (ren) {
@@ -34,7 +34,7 @@ void HandleIMem(VCore * top, uint8_t * mem, uint64_t raddr, uint8_t ren) {
     }
 }
 
-void HandleDMem(VCore * top, uint8_t * mem, uint64_t raddr, uint8_t ren, uint64_t waddr, uint64_t wdata, uint8_t wen) {
+void HandleDMem(VGeodeCore * top, uint8_t * mem, uint64_t raddr, uint8_t ren, uint64_t waddr, uint64_t wdata, uint8_t wen) {
     uint64_t addr;
 
     if (ren) {
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     ifs.read((char *)mem, MEMSIZE);
     ifs.close();
 
-    VCore * top = new VCore;
+    VGeodeCore * top = new VGeodeCore;
     VerilatedVcdC * vcd = new VerilatedVcdC;
 
     top->trace(vcd, 99);

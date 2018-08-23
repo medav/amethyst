@@ -49,6 +49,8 @@ def BitOrReduce(bits):
 
 @Module
 def ArithmeticLogicUnit():
+    """The primary arithmetic/logic unit for Geode."""
+
     io = Io({
         'op0': Input(Bits(C['core-width'])),
         'op1': Input(Bits(C['core-width'])),

@@ -12,9 +12,9 @@ geode = Circuit(True, True)
 
 print('Elaborating...')
 with geode:
-    top = core.Core()
+    top = core.GeodeCore()
 
 geode.SetTop(top)
 print('Synthesizing...')
-EmitCircuit(geode, 'build/atlas-gen/geode.v')
+EmitCircuit(geode, 'build/geode.v')
 print('Done!')

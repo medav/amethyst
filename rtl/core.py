@@ -11,7 +11,7 @@ import forward
 import hazard
 
 @Module
-def Core():
+def GeodeCore():
     io = Io({
         'imem': Output(imem_bundle),
         'dmem': Output(dmem_bundle)
