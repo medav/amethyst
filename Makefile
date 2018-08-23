@@ -1,17 +1,15 @@
 
 
 VERILATOR=verilator
+PYTHON=python3
+CXX=g++
 
 TOP=GeodeCore
 
 BUILDDIR=build
 VGENDIR=$(BUILDDIR)/verilator-gen
 
-CXX=g++
-CXXINC= \
-	-I$(VERILATOR_ROOT)/include \
-	-I$(VGENDIR)
-
+RTLSRC=$(wildcard rtl/*.py)
 VSRC=$(BUILDDIR)/geode.v
 TBSRC=tb/geode.cc
 VSIM=build/geode
@@ -31,18 +29,23 @@ VFLAGS= \
 	--exe $(abspath ./$(TBSRC)) \
 	-o $(abspath ./$(VSIM))
 
-default: $(VSIM)
+default: $(VSIM) app
 
-.PHONY: build-dirs clean
+.PHONY: build-dirs clean app
 
 build-dirs:
 	@mkdir -p $(BUILDDIR)
 	@mkdir -p $(VGENDIR)
+
+app:
+	$(MAKE) -C app/
+
+$(VSRC): $(RTLSRC)
+	$(PYTHON) geode.py
 
 $(VSIM): $(TBSRC) $(VSRC) | build-dirs
 	$(VERILATOR) $(VFLAGS) $(VSRC)
 	$(MAKE) -C $(VGENDIR) -f V$(TOP).mk
 
 clean:
-	@rm -r build/verilator-gen
-	@rm build/geode
+	@rm -rf build
