@@ -20,6 +20,17 @@ class AluInst(object):
     SLL = 0b1001
 
 class BitOrReduceOperator(AtlasOperator):
+    """Operator that reduces a bits signal via logic OR."""
+
+    #
+    # N.B. This is a good example of how extendable Atlas/Python is. It enables
+    # user code to create new synthesizable operations that generate custom
+    # Verilog code.
+    #
+    # Since Atlas doesn't currently have a good way of producing an OR reduction
+    # tree, we can just make our own, here!
+    #
+
     def __init__(self, bits):
         super().__init__('bitsum')
         self.bit_vec = [bits(i, i) for i in range(bits.width)]
@@ -48,11 +59,27 @@ def ArithmeticLogicUnit():
     zero = Wire(Bits(C['core-width']))
     shift_op = Wire(Bits(1))
 
+    #
+    # To make checking for overflow easy, all arithmetic operations are
+    # performed on 2 x core-width (sign extended) data.
+    #
+
     op0_ex = Cat([zero, io.op0])
     op1_ex = Cat([zero, io.op1])
 
-    # TODO: Comment here about why this works
+    #
+    # N.B. For all RV32I instructions, the shamt is actually only 5 bits. For
+    # 64 bit instructions, it's 6 bits. It's safe to always extract a 6-bit
+    # shamt because 32 bit instructions all coincidentally leave io.op1(6)
+    # set to zero, anyway.
+    #
+
     shamt = io.op1(5, 0)
+
+    #
+    # For a real ALU, add / sub operations would likely be combined to only use
+    # a single adder, negating the second operand for subtractions.
+    #
 
     and_result = op0_ex & op1_ex
     or_result = op0_ex | op1_ex
@@ -69,6 +96,11 @@ def ArithmeticLogicUnit():
     io.flags.zero <<= (result == 0)
     io.flags.sign <<= result(result.width - 1, result.width - 1)
     io.flags.overflow <<= BitOrReduce(result(result.width - 1, C['core-width']))
+
+    #
+    # The following essentially produces a mux that selects an output produced
+    # by this ALU based on the inst requested.
+    #
 
     with io.alu_inst == AluInst.AND:
         result <<= and_result

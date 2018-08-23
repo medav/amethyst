@@ -196,6 +196,12 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
         inst_spec = instructions[name]
         print(f'Instruction {name}: {inst_spec}')
 
+        #
+        # For some instructions, funct3 and funct7 don't need to be matched
+        # (and so are marked as Python "None"). For these cases, funct3_match
+        # and/or funct7_match are just set to 1 (always true).
+        #
+
         opcode_match = opcode == inst_spec.opcode
         funct3_match = 1 if inst_spec.funct3 is None else funct3 == inst_spec.funct3
         funct7_match = 1 if inst_spec.funct7 is None else funct7 == inst_spec.funct7
@@ -283,9 +289,29 @@ def RegisterFile():
         'r1_data': Output(Bits(C['core-width']))
     })
 
+    #
+    # For now the register file is an array of registers. This is implemented
+    # as a "list" signal in Atlas. When compiled to Verilog, the registers
+    # become separate signals and likely if ever synthesized will become
+    # regular HW registers.
+    #
+    # In the future, this register file should be revised to be implemented by
+    # an SRAM structure instead of an array of registers so it takes up less
+    # area / transistors / etc...
+    #
+    # N.B. Technically, x0 doesn't need a register since it should just be read
+    # as zero. It's still instantiated here to make it easy to just index into
+    # a list signal for reads. Most synthesis tools are smart enough to remove
+    # signals that are unused like this.
+    #
+
     reg_array = Reg(
         [Bits(C['core-width']) for _ in range(C['reg-count'])],
         reset_value=[0 for _ in range(C['reg-count'])])
+
+    #
+    # Handle the two read ports. If the read address is 0, always read 0.
+    #
 
     with io.r0_addr == 0:
         io.r0_data <<= 0
@@ -296,6 +322,11 @@ def RegisterFile():
         io.r1_data <<= 0
     with otherwise:
         io.r1_data <<= reg_array[io.r1_addr]
+
+    #
+    # Register writes to x0 are ignored since that register must always read as
+    # zero.
+    #
 
     with (io.w0_addr != 0) & io.w0_en:
         reg_array[io.w0_addr] <<= io.w0_data

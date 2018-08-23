@@ -19,7 +19,7 @@ def HazardUnit():
     #
     # This logic is taken straight from Hennessy and Patterson's comp org book.
     # All it does is signal when there is a data hazard between the ex and mem
-    # stage which means a pipeline stall needs to happen or bad things happen.
+    # stage which means a pipeline stall is required or bad things happen.
     #
 
     with io.ex_mem_read:
