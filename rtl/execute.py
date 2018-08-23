@@ -8,7 +8,7 @@ import forward
 
 from config import config as C
 
-class AluInst(object):
+class AluInsts(object):
     width = 4
 
     AND = 0b0000
@@ -51,7 +51,7 @@ def ArithmeticLogicUnit():
     io = Io({
         'op0': Input(Bits(C['core-width'])),
         'op1': Input(Bits(C['core-width'])),
-        'alu_inst': Input(Bits(AluInst.width)),
+        'alu_inst': Input(Bits(AluInsts.width)),
         'result': Output(Bits(C['core-width'])),
         'flags': Output(alu_flags)
     })
@@ -102,28 +102,28 @@ def ArithmeticLogicUnit():
     # by this ALU based on the inst requested.
     #
 
-    with io.alu_inst == AluInst.AND:
+    with io.alu_inst == AluInsts.AND:
         result <<= and_result
 
-    with io.alu_inst == AluInst.OR:
+    with io.alu_inst == AluInsts.OR:
         result <<= or_result
 
-    with io.alu_inst == AluInst.ADD:
+    with io.alu_inst == AluInsts.ADD:
         result <<= add_result
 
-    with io.alu_inst == AluInst.SUB:
+    with io.alu_inst == AluInsts.SUB:
         result <<= sub_result
 
-    with io.alu_inst == AluInst.SLL:
+    with io.alu_inst == AluInsts.SLL:
         result <<= Cat([zero, sll_result])
 
-    with io.alu_inst == AluInst.SRL:
+    with io.alu_inst == AluInsts.SRL:
         result <<= Cat([zero, srl_result])
 
     NameSignals(locals())
 
 @dataclass
-class AluInstSpec(object):
+class AluInst(object):
     # Inputs to match
     alu_op1 : int
     alu_op0 : int
@@ -134,23 +134,34 @@ class AluInstSpec(object):
     alu_inst : int
 
 alu_instructions = [
-    AluInstSpec(0, 0, None, None, AluInst.ADD),
-    AluInstSpec(None, 1, None, None, AluInst.SUB),
+    AluInst(0, 0, None, None, AluInsts.ADD),
+    AluInst(None, 1, None, None, AluInsts.SUB),
 
-    AluInstSpec(1, None, 0b0000000, 0b000, AluInst.ADD),
-    AluInstSpec(1, None, 0b0000000, 0b001, AluInst.SLL),
-    AluInstSpec(1, None, 0b0000000, 0b100, AluInst.XOR),
-    AluInstSpec(1, None, 0b0000000, 0b101, AluInst.SRL),
-    AluInstSpec(1, None, 0b0100000, 0b000, AluInst.SUB),
-    AluInstSpec(1, None, 0b0000000, 0b111, AluInst.AND),
-    AluInstSpec(1, None, 0b0000000, 0b110, AluInst.OR),
+    AluInst(1, None, 0b0000000, 0b000, AluInsts.ADD),
+    AluInst(1, None, 0b0000000, 0b001, AluInsts.SLL),
+    AluInst(1, None, 0b0000000, 0b100, AluInsts.XOR),
+    AluInst(1, None, 0b0000000, 0b101, AluInsts.SRL),
+    AluInst(1, None, 0b0100000, 0b000, AluInsts.SUB),
+    AluInst(1, None, 0b0000000, 0b111, AluInsts.AND),
+    AluInst(1, None, 0b0000000, 0b110, AluInsts.OR),
 ]
 
 def AluControl(alu_inst, alu_op, funct7, funct3):
+    """Produce an appropriate alu_inst for the given op, funct3 and funct7.
+
+    N.B. This function is very similar to how the idecode control works.
+    """
+
     alu_op0 = alu_op(0, 0)
     alu_op1 = alu_op(1, 1)
 
     alu_inst <<= 0
+
+    #
+    # N.B. Atlas doesn't currently support reflected operations with constant
+    # values (e.g. `1 & some_wire`). Because of this, the constant value 1
+    # needs to be set to a wire to be used in the loop below.
+    #
 
     true_wire = Wire(Bits(1))
     true_wire <<= 1
