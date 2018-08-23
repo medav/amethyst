@@ -2,11 +2,12 @@ from dataclasses import dataclass
 
 from atlas import *
 from interfaces import *
-from common import *
 
 import forward
 
 from config import config as C
+
+AluSrc = Enum(['RS2', 'IMM'])
 
 class AluInsts(object):
     width = 4
@@ -182,6 +183,15 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
 
 @Module
 def ExecuteStage():
+    """The execute stage for Geode.
+
+    This stage contains the primary ALU for Geode. It takes in register values
+    produced in the previous stage (or forwarded values when necessary) to
+    perform operations on.
+
+    Additionally, it produces the branch target for branch instructions.
+    """
+
     io = Io({
         'id_ex': Input(id_ex_bundle),
         'fwd1_select': Input(Bits(forward.fwd.bitwidth)),

@@ -3,7 +3,11 @@ from contextlib import contextmanager
 
 from atlas import *
 from interfaces import *
-from common import *
+from execute import AluSrc
+
+from config import config as C
+
+ITypes = Enum(['R', 'I', 'S', 'B', 'U', 'J'])
 
 class Opcodes(object):
     LOAD = 0b0000011

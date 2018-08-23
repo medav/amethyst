@@ -1,9 +1,7 @@
 from atlas import *
 from interfaces import *
-from common import *
 
 from config import config as C
-
 
 @Module
 def MemStage():
@@ -30,8 +28,19 @@ def MemStage():
     io.mem_wb.inst_data <<= io.ex_mem.inst_data
     io.mem_wb.alu_result <<= io.ex_mem.alu_result
 
+    #
+    # If this is a branch instruction, the mem_ctrl.branch signal is set. Pass
+    # it along here (it will cause the PC to be updated and preceding
+    # instructions to be flushed).
+    #
+
     io.branch <<= io.ex_mem.mem_ctrl.branch
     io.branch_target <<= io.ex_mem.branch_target
+
+    #
+    # dmem addresses are produces by the ALU in the ex stage. Write data comes
+    # from the second source register (if applicable).
+    #
 
     io.dmem.r_addr <<= io.ex_mem.alu_result
     io.dmem.r_en <<= io.ex_mem.mem_ctrl.mem_read
@@ -39,6 +48,12 @@ def MemStage():
     io.dmem.w_addr <<= io.ex_mem.alu_result
     io.dmem.w_data <<= io.ex_mem.rs2_data
     io.dmem.w_en <<= io.ex_mem.mem_ctrl.mem_write
+
+    #
+    # Similar to the imem, the dmem is assumed to have an internal latch that
+    # captures read data for the next cycle. So likewise, dmem data can't be
+    # passed through the mem_wb reg or it will be delayed by a cycle.
+    #
 
     io.read_data <<= io.dmem.r_data
 

@@ -1,6 +1,5 @@
 from atlas import *
 from interfaces import *
-from common import *
 
 from config import config as C
 
@@ -34,6 +33,12 @@ def ForwardReg(rs, mem_reg_write, mem_rd, wb_reg_write, wb_rd, fwd_select):
 
 @Module
 def ForwardUnit():
+    """Forwarding unit for Geode.
+
+    This module consumes information from the pipeline to decide when data
+    forwarding is necessary to maintain correct execution.
+    """
+
     io = Io({
         'ex_rs1': Input(Bits(Log2Ceil(C['reg-count']))),
         'ex_rs2': Input(Bits(Log2Ceil(C['reg-count']))),
