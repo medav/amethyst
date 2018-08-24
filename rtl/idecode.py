@@ -237,12 +237,25 @@ def IDecodeStage():
         'id_ex': Output(id_ex_bundle)
     })
 
+    inst = Wire(Bits(32))
+
+    #
+    # The ifetch stage may read an invalid instruction in the case where a
+    # branch is taken. This is indicated by io.if_id.valid. If it's 0, replace
+    # the instruction to decode with 0 (which will result in a nop).
+    #
+
+    with io.if_id.valid:
+        inst <<= io.inst
+    with otherwise:
+        inst <<= 0
+
     regfile = Instance(RegisterFile())
 
     itype = Wire(Bits(ITypes.bitwidth))
 
-    regfile.r0_addr <<= Rs1(io.inst)
-    regfile.r1_addr <<= Rs2(io.inst)
+    regfile.r0_addr <<= Rs1(inst)
+    regfile.r1_addr <<= Rs2(inst)
 
     regfile.w0_addr <<= io.reg_write.w_addr
     regfile.w0_en <<= io.reg_write.w_en
@@ -254,11 +267,11 @@ def IDecodeStage():
     # detection and data forwarding.
     #
 
-    io.id_ex.inst_data.inst <<= io.inst
+    io.id_ex.inst_data.inst <<= inst
     io.id_ex.inst_data.pc <<= io.if_id.pc
-    io.id_ex.inst_data.rs1 <<= Rs1(io.inst)
-    io.id_ex.inst_data.rs2 <<= Rs2(io.inst)
-    io.id_ex.inst_data.rd <<= Rd(io.inst)
+    io.id_ex.inst_data.rs1 <<= Rs1(inst)
+    io.id_ex.inst_data.rs2 <<= Rs2(inst)
+    io.id_ex.inst_data.rd <<= Rd(inst)
 
     #
     # Hook up the register read outputs.
@@ -275,7 +288,7 @@ def IDecodeStage():
     #
 
     Control(
-        io.inst,
+        inst,
         itype,
         io.id_ex.ex_ctrl,
         io.id_ex.mem_ctrl,
@@ -287,6 +300,6 @@ def IDecodeStage():
     # this instruction.
     #
 
-    io.id_ex.imm <<= GenerateImmediate(io.inst, itype)
+    io.id_ex.imm <<= GenerateImmediate(inst, itype)
 
     NameSignals(locals())

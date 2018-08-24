@@ -36,7 +36,7 @@ def IFetchStage():
     pc <<= pc + 4
 
     io.imem.r_addr <<= pc
-    io.imem.r_en <<= 1
+    io.imem.r_en <<= ~io.branch
 
     #
     # It is assumed that the imem contains an internal latch that captures read
@@ -44,8 +44,14 @@ def IFetchStage():
     # if_id register or it will be delayed by one cycle. Instead, the imem acts
     # as part of the if_id register and bypasses it to the idecode stage.
     #
+    # In addition to this, a valid flag is passed to the if_id register to tell
+    # the decode stage if the incoming instruction is valid. This is set to
+    # false when a branch is taken (because the next instruction to be read is
+    # to be discarded).
+    #
 
     io.if_id.pc <<= pc
+    io.if_id.valid <<= ~io.branch
     io.inst <<= io.imem.r_data
 
     #
