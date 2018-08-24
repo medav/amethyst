@@ -19,6 +19,7 @@ The following folders are a part of this repository. Here's what they do:
 ## 1. Install Prerequisites
 The following is required to use Geode:
 * [Verilator](https://www.veripool.org/projects/verilator/wiki/Installing)
+* [RISC-V Toolchain](https://www.sifive.com/products/tools/) OR ([Source](https://github.com/riscv/riscv-gnu-toolchain))
 * [Python 3.7+](https://www.python.org)
 * [Atlas](https://github.com/medav/atlas)
 * (Optional) A waveform viewer (e.g. GtkWave)
