@@ -38,12 +38,24 @@ class Opcodes(object):
 
 @dataclass(frozen=True)
 class Pattern(object):
+    """Instruction pattern record.
+
+    The values in this class are used to detect when a particular instruction
+    is matched (and its related control values should be set).
+
+    N.B. Some instructions do not require a match for funct3 and funct7 so in
+    the following code, some instructions mark funct3 and/or funct7 as None
+    which will cause that field to be ignored when matching.
+    """
+
     opcode : int
     funct3 : int
     funct7 : int
 
 @dataclass(frozen=True)
 class ExCtrl(object):
+    """Execute control signals bundle."""
+
     alu_src : int
     alu_op : int
 
@@ -55,6 +67,8 @@ class ExCtrl(object):
 
 @dataclass(frozen=True)
 class MemCtrl(object):
+    """Mem control signals bundle."""
+
     branch : bool
     mem_write : bool
     mem_read : bool
@@ -62,7 +76,7 @@ class MemCtrl(object):
     def Literal(self):
         return {
             'branch': 1 if self.branch else 0,
-            'mem_write': 1 if  self.mem_write else 0,
+            'mem_write': 1 if self.mem_write else 0,
             'mem_read': 1 if self.mem_read else 0
         }
 
@@ -72,6 +86,8 @@ class MemCtrl(object):
 
 @dataclass(frozen=True)
 class WbCtrl(object):
+    """Writeback control signals bundle."""
+
     mem_to_reg : bool
 
     def Literal(self):
@@ -89,11 +105,23 @@ class WbCtrl(object):
 
 @dataclass
 class Inst(object):
+    """Instruction specification record.
+
+    This is a dataclass that basically just acts as a record that relates a
+    given instruction "pattern" to the control signals that should be produced
+    by that pattern.
+    """
+
     itype : int
     pattern : Pattern
     ex_ctrl : ExCtrl
     mem_ctrl : MemCtrl
     wb_ctrl : WbCtrl
+
+    #
+    # The following are helper functions for creating an instruction of a
+    # particular type. This is mainly used for verbosity of code below.
+    #
 
     @staticmethod
     def R(pattern, ex_ctrl, mem_ctrl, wb_ctrl):
