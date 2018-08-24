@@ -1,17 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.93 (w)1999-2018 BSI
-[*] Tue Aug 21 03:40:49 2018
+[*] Fri Aug 24 04:29:17 2018
 [*]
-[dumpfile] "E:\Users\micha\Documents\projects\geode\dump.vcd"
-[dumpfile_mtime] "Tue Aug 21 03:36:50 2018"
-[dumpfile_size] 231259
-[savefile] "E:\Users\micha\Documents\projects\geode\waveform.gtkw"
-[timestart] 27
+[dumpfile] "E:\Users\micha\Documents\projects\geode\tb\dump.vcd"
+[savefile] "E:\Users\micha\Documents\projects\geode\tb\waveform.gtkw"
+[timestart] 22
 [size] 2048 1089
-[pos] -1 -1
-*-3.000000 42 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -217 -217
+*-4.000000 64 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
-[treeopen] TOP.Core.
+[treeopen] TOP.GeodeCore.
 [sst_width] 371
 [signals_width] 493
 [sst_expanded] 1
@@ -21,73 +19,65 @@ TOP.io_clock
 TOP.io_reset
 @800200
 -ifetch_stage
-@40000005
-[color] 2
-[fpshift_count] 0
-TOP.Core.IFetchStage_0.pc[63:0]
-@28
-TOP.Core.IFetchStage_0.io_branch
 @22
-TOP.Core.IFetchStage_0.io_branch_target[63:0]
-TOP.Core.IFetchStage_0.io_if_id_pc[63:0]
-TOP.Core.IFetchStage_0.io_imem_r_addr[63:0]
-TOP.Core.IFetchStage_0.io_imem_r_data[31:0]
+TOP.GeodeCore.IFetchStage_0.pc[63:0]
+TOP.GeodeCore.IFetchStage_0.io_inst[31:0]
 @28
-TOP.Core.IFetchStage_0.io_imem_r_en
+TOP.GeodeCore.IFetchStage_0.io_branch
+@22
+TOP.GeodeCore.IFetchStage_0.io_branch_target[63:0]
+TOP.GeodeCore.IFetchStage_0.io_imem_r_data[31:0]
 @1000200
 -ifetch_stage
 @800200
 -idecode_stage
 @22
 [color] 1
-TOP.Core.IDecodeStage_0.io_inst[31:0]
-TOP.Core.IDecodeStage_0.imm[31:0]
-TOP.Core.IDecodeStage_0.io_if_id_pc[63:0]
-@28
-TOP.Core.IDecodeStage_0.itype[2:0]
-@22
-TOP.Core.IDecodeStage_0.io_id_ex_inst_data_rd[4:0]
-TOP.Core.IDecodeStage_0.io_id_ex_inst_data_rs1[4:0]
-TOP.Core.IDecodeStage_0.io_id_ex_inst_data_rs2[4:0]
-@28
-TOP.Core.IDecodeStage_0.io_id_ex_ex_ctrl_funct3[2:0]
-@22
-TOP.Core.IDecodeStage_0.io_id_ex_ex_ctrl_funct7[6:0]
-@28
-TOP.Core.IDecodeStage_0.io_id_ex_ex_ctrl_alu_op[1:0]
-@22
-TOP.Core.IDecodeStage_0.io_id_ex_ex_ctrl_alu_src[4:0]
+TOP.GeodeCore.IDecodeStage_0.io_inst[31:0]
+TOP.GeodeCore.IDecodeStage_0.io_if_id_pc[63:0]
 @1000200
 -idecode_stage
 @800200
 -execute_stage
 @22
 [color] 1
-TOP.Core.ExecuteStage_0.io_id_ex_inst_data_inst[31:0]
-TOP.Core.ExecuteStage_0.io_ex_mem_inst_data_pc[63:0]
-TOP.Core.ExecuteStage_0.rs1_fwd[63:0]
-TOP.Core.ExecuteStage_0.rs2_fwd[63:0]
-TOP.Core.ExecuteStage_0.io_id_ex_imm[63:0]
+TOP.GeodeCore.ExecuteStage_0.io_id_ex_inst_data_inst[31:0]
 @28
-TOP.Core.ExecuteStage_0.io_id_ex_ex_ctrl_alu_op[1:0]
+TOP.GeodeCore.ExecuteStage_0.io_id_ex_ex_ctrl_alu_op[1:0]
 @22
-TOP.Core.ExecuteStage_0.io_id_ex_ex_ctrl_alu_src[4:0]
-@28
-TOP.Core.ExecuteStage_0.io_ex_mem_alu_flags_overflow
-@22
-TOP.Core.ExecuteStage_0.ArithmeticLogicUnit_0_result[63:0]
+TOP.GeodeCore.ExecuteStage_0.io_id_ex_inst_data_rd[4:0]
+TOP.GeodeCore.ExecuteStage_0.io_id_ex_inst_data_rs1[4:0]
+TOP.GeodeCore.ExecuteStage_0.io_id_ex_inst_data_rs2[4:0]
 @1000200
 -execute_stage
 @800200
 -mem_stage
 @22
 [color] 1
-TOP.Core.MemStage_0.io_ex_mem_inst_data_inst[31:0]
-TOP.Core.MemStage_0.io_ex_mem_inst_data_pc[63:0]
+TOP.GeodeCore.MemStage_0.io_ex_mem_inst_data_inst[31:0]
+TOP.GeodeCore.MemStage_0.io_ex_mem_alu_result[63:0]
 @28
-TOP.Core.MemStage_0.io_ex_mem_mem_ctrl_mem_read
-TOP.Core.MemStage_0.io_ex_mem_mem_ctrl_mem_write
+TOP.GeodeCore.MemStage_0.io_dmem_r_en
+@22
+TOP.GeodeCore.MemStage_0.io_dmem_r_addr[63:0]
+TOP.GeodeCore.MemStage_0.io_dmem_r_data[63:0]
+@28
+TOP.GeodeCore.MemStage_0.io_dmem_w_en
 @1000200
 -mem_stage
+@800200
+-writeback_stage
+@23
+[color] 1
+TOP.GeodeCore.WritebackStage_0.io_mem_wb_inst_data_inst[31:0]
+@28
+TOP.GeodeCore.WritebackStage_0.io_mem_wb_wb_ctrl_mem_to_reg
+@22
+TOP.GeodeCore.WritebackStage_0.io_reg_write_w_addr[4:0]
+TOP.GeodeCore.WritebackStage_0.io_reg_write_w_data[63:0]
+@28
+TOP.GeodeCore.WritebackStage_0.io_reg_write_w_en
+@1000200
+-writeback_stage
 [pattern_trace] 1
 [pattern_trace] 0

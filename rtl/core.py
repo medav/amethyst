@@ -59,7 +59,7 @@ def GeodeCore():
     hzd.id_rs2 <<= idecode_stage.id_ex.inst_data.rs2
 
     #
-    # IFetch Stage
+    # 1. IFetch Stage
     #
 
     io.imem.r_addr <<= ifetch_stage.imem.r_addr
@@ -70,7 +70,7 @@ def GeodeCore():
         if_id_reg <<= ifetch_stage.if_id
 
     #
-    # IDecode Stage
+    # 2. IDecode Stage
     #
 
     idecode_stage.if_id <<= if_id_reg
@@ -87,7 +87,7 @@ def GeodeCore():
     idecode_stage.reg_write <<= writeback_stage.reg_write
 
     #
-    # Execute Stage
+    # 3. Execute Stage
     #
 
     execute_stage.id_ex <<= id_ex_reg
@@ -99,7 +99,7 @@ def GeodeCore():
     execute_stage.fwd_wb_data <<= writeback_stage.reg_write.w_data
 
     #
-    # Mem Stage
+    # 4. Mem Stage
     #
 
     io.dmem.r_addr <<= mem_stage.dmem.r_addr
@@ -114,7 +114,7 @@ def GeodeCore():
     mem_wb_reg <<= mem_stage.mem_wb
 
     #
-    # Writeback Stage
+    # 5. Writeback Stage
     #
 
     writeback_stage.mem_wb <<= mem_wb_reg
