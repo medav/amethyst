@@ -2,23 +2,11 @@ from dataclasses import dataclass
 
 from atlas import *
 from interfaces import *
+from instructions import *
 
 import forward
 
 from config import config as C
-
-AluSrc = Enum(['RS2', 'IMM'])
-
-class AluInsts(object):
-    width = 4
-
-    AND = 0b0000
-    OR = 0b0001
-    ADD = 0b0010
-    SUB = 0b0110
-    XOR = 0b0101
-    SRL = 0b1000
-    SLL = 0b1001
 
 class BitOrReduceOperator(AtlasOperator):
     """Operator that reduces a bits signal via logic OR."""
@@ -125,29 +113,11 @@ def ArithmeticLogicUnit():
 
     NameSignals(locals())
 
-@dataclass
-class AluInst(object):
-    # Inputs to match
-    alu_op1 : int
-    alu_op0 : int
-    funct7 : int
-    funct3 : int
-
-    # What to set alu_inst to
-    alu_inst : int
-
-alu_instructions = [
-    AluInst(0, 0, None, None, AluInsts.ADD),
-    AluInst(None, 1, None, None, AluInsts.SUB),
-
-    AluInst(1, None, 0b0000000, 0b000, AluInsts.ADD),
-    AluInst(1, None, 0b0000000, 0b001, AluInsts.SLL),
-    AluInst(1, None, 0b0000000, 0b100, AluInsts.XOR),
-    AluInst(1, None, 0b0000000, 0b101, AluInsts.SRL),
-    AluInst(1, None, 0b0100000, 0b000, AluInsts.SUB),
-    AluInst(1, None, 0b0000000, 0b111, AluInsts.AND),
-    AluInst(1, None, 0b0000000, 0b110, AluInsts.OR),
-]
+def OptionalMatch(default, pattern, signal):
+    if pattern is None:
+        return default
+    else:
+        return signal == pattern
 
 def AluControl(alu_inst, alu_op, funct7, funct3):
     """Produce an appropriate alu_inst for the given op, funct3 and funct7.
@@ -166,17 +136,17 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
     # needs to be set to a wire to be used in the loop below.
     #
 
-    true_wire = Wire(Bits(1))
-    true_wire <<= 1
+    true_w = Wire(Bits(1))
+    true_w <<= 1
 
     NameSignals(locals())
 
     for inst_spec in alu_instructions:
 
-        alu_op0_match = true_wire if inst_spec.alu_op0 is None else alu_op0 == inst_spec.alu_op0
-        alu_op1_match = true_wire if inst_spec.alu_op1 is None else alu_op1 == inst_spec.alu_op1
-        funct3_match = true_wire if inst_spec.funct3 is None else funct3 == inst_spec.funct3
-        funct7_match = true_wire if inst_spec.funct7 is None else funct7 == inst_spec.funct7
+        alu_op0_match = OptionalMatch(true_w, inst_spec.alu_op0, alu_op0)
+        alu_op1_match = OptionalMatch(true_w, inst_spec.alu_op1, alu_op1)
+        funct3_match = OptionalMatch(true_w, inst_spec.funct3, funct3)
+        funct7_match = OptionalMatch(true_w, inst_spec.funct7, funct7)
 
         with alu_op0_match & alu_op1_match & funct3_match & funct7_match:
             alu_inst <<= inst_spec.alu_inst

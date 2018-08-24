@@ -3,129 +3,9 @@ from contextlib import contextmanager
 
 from atlas import *
 from interfaces import *
-from execute import AluSrc
+from instructions import *
 
 from config import config as C
-
-ITypes = Enum(['R', 'I', 'S', 'B', 'U', 'J'])
-
-class Opcodes(object):
-    LOAD = 0b0000011
-    STORE = 0b0100011
-    MADD = 0b1000011
-    BRANCH = 0b1100011
-    LOADFP = 0b0000111
-    STOREFP = 0b0100111
-    MSUB = 0b1000111
-    JALR = 0b1100111
-    CUSTOM0 = 0b0001011
-    CUSTOM1 = 0b0101011
-    NMSUB = 0b1001011
-    MISCMEM = 0b0001111
-    AMO = 0b0101111
-    NMADD = 0b1001111
-    JAL = 0b1101111
-    OPIMM = 0b0010011
-    OP = 0b0110011
-    OPFP = 0b1010011
-    SYSTEM = 0b1110011
-    AUIPC = 0b0010111
-    LUI = 0b0110111
-    OPIMM32 = 0b0011011
-    OP32 = 0b0111011
-    CUSTOM2 = 0b1011011
-    CUSTOM3 = 0b1111011
-
-@dataclass
-class Inst(object):
-    # Data to match against
-    opcode : int
-    funct3 : int
-    funct7 : int
-
-    # Output control signals
-    itype : int
-
-    # EX control signals
-    alu_src : int
-    alu_op : int
-
-    # MEM control signals
-    branch : bool
-    mem_write : bool
-    mem_read : bool
-
-    # WB control signals
-    mem_to_reg : bool
-
-instructions = {
-
-    #
-    # R-Type Instructions
-    #
-
-    'add': Inst(Opcodes.OP, 0b000, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'sub': Inst(Opcodes.OP, 0b000, 0b0100000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'sll': Inst(Opcodes.OP, 0b001, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'xor': Inst(Opcodes.OP, 0b100, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'srl': Inst(Opcodes.OP, 0b101, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'or': Inst(Opcodes.OP, 0b110, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    'and': Inst(Opcodes.OP, 0b111, 0b0000000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    # 'lr.d': Inst(Opcodes.OP, 0b011, 0b0001000, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-    # 'sc.d': Inst(Opcodes.OP, 0b011, 0b0001100, ITypes.R, AluSrc.RS2, 0b10, False, False, False, False),
-
-    #
-    # I-Type Instructions
-    #
-
-    'lb': Inst(Opcodes.LOAD, 0b000, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lh': Inst(Opcodes.LOAD, 0b001, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lw': Inst(Opcodes.LOAD, 0b010, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'ld': Inst(Opcodes.LOAD, 0b011, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lbu': Inst(Opcodes.LOAD, 0b100, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lhu': Inst(Opcodes.LOAD, 0b101, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'lwu': Inst(Opcodes.LOAD, 0b110, None, ITypes.I, AluSrc.RS2, 0b00, False, False, True, True),
-    'addi': Inst(Opcodes.OPIMM, 0b000, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'slli': Inst(Opcodes.OPIMM, 0b001, 0b0000000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'xori': Inst(Opcodes.OPIMM, 0b100, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'srli': Inst(Opcodes.OPIMM, 0b101, 0b0000000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'srai': Inst(Opcodes.OPIMM, 0b101, 0b0100000, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'ori': Inst(Opcodes.OPIMM, 0b110, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'andi': Inst(Opcodes.OPIMM, 0b111, None, ITypes.I, AluSrc.IMM, 0b00, False, False, False, False),
-    'jalr': Inst(Opcodes.JALR, 0b000, None, ITypes.I, AluSrc.RS2, 0b00, False, False, False, False),
-
-    #
-    # S-Type Instructions
-    #
-
-    'sb': Inst(Opcodes.STORE, 0b000, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
-    'sh': Inst(Opcodes.STORE, 0b001, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
-    'sw': Inst(Opcodes.STORE, 0b010, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
-    'sd': Inst(Opcodes.STORE, 0b111, None, ITypes.S, AluSrc.RS2, 0b00, False, True, False, False),
-
-    #
-    # B-Type Instructions
-    #
-
-    'beq': Inst(Opcodes.BRANCH, 0b000, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bne': Inst(Opcodes.BRANCH, 0b001, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'blt': Inst(Opcodes.BRANCH, 0b100, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bge': Inst(Opcodes.BRANCH, 0b101, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bltu': Inst(Opcodes.BRANCH, 0b110, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-    'bgeu': Inst(Opcodes.BRANCH, 0b111, None, ITypes.B, AluSrc.RS2, 0b01, True, False, False, False),
-
-    #
-    # U-Type Instructions
-    #
-
-    'lui': Inst(Opcodes.LUI, None, None, ITypes.U, AluSrc.RS2, 0b00, False, False, False, False),
-
-    #
-    # J-Type Instructions
-    #
-
-    'jal': Inst(Opcodes.JAL, None, None, ITypes.J, AluSrc.RS2, 0b00, True, False, False, False),
-}
 
 #
 # Helper functions to retrieve information from an instruction. Note that the
@@ -144,19 +24,15 @@ def SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl):
 
     itype <<= inst_spec.itype
 
-    ex_ctrl.alu_src <<= inst_spec.alu_src
-    ex_ctrl.alu_op <<= inst_spec.alu_op
-
     #
-    # N.B. Atlas doesn't currently support bool literals as contant values so
-    # just convert them to 1 / 0 here via Python ternarys.
+    # The Literal() function (see instructions.py) generates an Atlas 'literal'
+    # value that can be used on the right-hand side of an assignment (as is done
+    # below).
     #
 
-    mem_ctrl.branch <<= 1 if inst_spec.branch else 0
-    mem_ctrl.mem_write <<= 1 if inst_spec.mem_write else 0
-    mem_ctrl.mem_read <<= 1 if inst_spec.mem_read else 0
-
-    wb_ctrl.mem_to_reg <<= 1 if inst_spec.mem_to_reg else 0
+    ex_ctrl <<= inst_spec.ex_ctrl.Literal()
+    mem_ctrl <<= inst_spec.mem_ctrl.Literal()
+    wb_ctrl <<= inst_spec.wb_ctrl.Literal()
 
 def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
     """Primary control logic for Geode."""
@@ -198,7 +74,6 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
 
     for name in instructions:
         inst_spec = instructions[name]
-        print(f'Instruction {name}: {inst_spec}')
 
         #
         # For some instructions, funct3 and funct7 don't need to be matched
@@ -206,9 +81,17 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
         # and/or funct7_match are just set to 1 (always true).
         #
 
-        opcode_match = opcode == inst_spec.opcode
-        funct3_match = 1 if inst_spec.funct3 is None else funct3 == inst_spec.funct3
-        funct7_match = 1 if inst_spec.funct7 is None else funct7 == inst_spec.funct7
+        opcode_match = opcode == inst_spec.pattern.opcode
+
+        if inst_spec.pattern.funct3 is None:
+            funct3_match = 1
+        else:
+            funct3_match = funct3 == inst_spec.pattern.funct3
+
+        if inst_spec.pattern.funct7 is None:
+            funct7_match = 1
+        else:
+            funct7_match = funct7 == inst_spec.pattern.funct7
 
         with opcode_match & funct3_match & funct7_match:
             SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl)
