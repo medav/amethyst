@@ -1,6 +1,6 @@
 # Geode
 
-Geode is an implementation of the classic 5-stage pipeline as described in Hennessy and Patterson's Computer Organization and Design (Risc-V Edition). It targets the RV64I ISA (and hopefully more in the future).
+Geode is an implementation of the classic 5-stage pipeline as described in Hennessy and Patterson's Computer Organization and Design (Risc-V Edition). It targets (eventually) the whole RV64I ISA.
 
 Geode is written in Atlas/Python. [Atlas](https://github.com/medav/atlas) is a Python-embedded-HDL similar to Chisel/Scala. Note that at the time of this project's creation, Atlas is still in the very early stages of development.
 
@@ -19,6 +19,7 @@ The following folders are a part of this repository. Here's what they do:
 ## 1. Install Prerequisites
 The following is required to use Geode:
 * [Verilator](https://www.veripool.org/projects/verilator/wiki/Installing)
+* [RISC-V Toolchain](https://www.sifive.com/products/tools/) OR ([Source](https://github.com/riscv/riscv-gnu-toolchain))
 * [Python 3.7+](https://www.python.org)
 * [Atlas](https://github.com/medav/atlas)
 * (Optional) A waveform viewer (e.g. GtkWave)
