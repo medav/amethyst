@@ -8,7 +8,7 @@ import forward
 
 from config import config as C
 
-class BitOrReduceOperator(AtlasOperator):
+class BitOrReduceOperator(Operator):
     """Operator that reduces a bits signal via logic OR."""
 
     #
@@ -22,8 +22,12 @@ class BitOrReduceOperator(AtlasOperator):
 
     def __init__(self, bits):
         super().__init__('bitsum')
-        self.bit_vec = [bits(i, i) for i in range(bits.width)]
-        self.RegisterSignal(Signal(Bits(1)))
+        self.bit_vec = [FilterRvalue(bits(i, i)) for i in range(bits.width)]
+        self.result = CreateSignal(
+            Bits(1),
+            name='result',
+            parent=self,
+            frontend=False)
 
     def Declare(self):
         VDeclWire(self.result)

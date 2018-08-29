@@ -8,13 +8,12 @@ from config import config as C
 import core
 
 
-geode = Circuit(True, True)
+geode = Circuit('geode', True, True)
 
 print('Elaborating...')
-with geode:
-    top = core.GeodeCore()
+with Context(geode):
+    geode.top = core.GeodeCore()
 
-geode.SetTop(top)
 print('Synthesizing...')
 EmitCircuit(geode, 'build/geode.v')
 print('Done!')
