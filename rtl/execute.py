@@ -22,7 +22,7 @@ class BitOrReduceOperator(Operator):
 
     def __init__(self, bits):
         super().__init__('bitsum')
-        self.bit_vec = [FilterRvalue(bits(i, i)) for i in range(bits.width)]
+        self.bit_vec = [FilterFrontend(bits(i, i)) for i in range(bits.width)]
         self.result = CreateSignal(
             Bits(1),
             name='result',
