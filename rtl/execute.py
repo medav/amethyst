@@ -36,8 +36,9 @@ class BitOrReduceOperator(Operator):
         add_str = ' | '.join([VName(bit) for bit in self.bit_vec])
         VAssignRaw(VName(self.result), add_str)
 
+@OpGen(default='result')
 def BitOrReduce(bits):
-    return BitOrReduceOperator(bits).result
+    return BitOrReduceOperator(bits)
 
 @Module
 def ArithmeticLogicUnit():
