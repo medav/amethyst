@@ -13,8 +13,13 @@ import hazard
 @Module
 def Amethyst():
     io = Io({
-        'imem': Output(mem_bundle),
-        'dmem': Output(mem_bundle)
+        'imem': Output({
+            'read': mem_read_bundle
+        }),
+        'dmem': Output({
+            'read': mem_read_bundle,
+            'write': mem_write_bundle
+        })
     })
 
     #
@@ -62,9 +67,7 @@ def Amethyst():
     # 1. IFetch Stage
     #
 
-    io.imem.r_addr <<= ifetch_stage.imem.r_addr
-    io.imem.r_en <<= ifetch_stage.imem.r_en
-    ifetch_stage.imem.r_data <<= io.imem.r_data
+    io.imem <<= ifetch_stage.imem
 
     ifetch_stage.branch <<= mem_stage.branch
     ifetch_stage.branch_target <<= mem_stage.branch_target
@@ -113,13 +116,7 @@ def Amethyst():
     # 4. Mem Stage
     #
 
-    io.dmem.r_addr <<= mem_stage.dmem.r_addr
-    io.dmem.r_en <<= mem_stage.dmem.r_en
-    mem_stage.dmem.r_data <<= io.dmem.r_data
-
-    io.dmem.w_addr <<= mem_stage.dmem.w_addr
-    io.dmem.w_en <<= mem_stage.dmem.w_en
-    io.dmem.w_addr <<= mem_stage.dmem.w_addr
+    io.dmem <<= mem_stage.dmem
 
     mem_stage.ex_mem <<= ex_mem_reg
     mem_wb_reg <<= mem_stage.mem_wb

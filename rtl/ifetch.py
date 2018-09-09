@@ -19,7 +19,9 @@ def IFetchStage():
     io = Io({
         'if_id': Output(if_id_bundle),
         'inst': Output(Bits(32)),
-        'imem': Output(imem_bundle),
+        'imem': Output({
+            'read': mem_read_bundle
+        }),
         'branch': Input(Bits(1)),
         'branch_target': Input(Bits(C['paddr-width']))
     })
@@ -38,9 +40,7 @@ def IFetchStage():
     #
 
     pc <<= pc + 4
-
-    io.imem.r_addr <<= pc
-    io.imem.r_en <<= ~io.branch
+    icache.cpu_req <<= pc
 
     #
     # It is assumed that the imem contains an internal latch that captures read
@@ -55,8 +55,8 @@ def IFetchStage():
     #
 
     io.if_id.pc <<= pc
-    io.if_id.valid <<= ~io.branch
-    io.inst <<= io.imem.r_data
+    io.if_id.valid <<= ~io.branch & ~icache.cpu_resp.miss
+    io.inst <<= icache.cpu_resp.data
 
     #
     # When a branch is in the mem stage, it will decide whether it is taken or

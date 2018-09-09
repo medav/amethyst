@@ -6,19 +6,24 @@ from config import config as C
 # Memory signals
 #
 
-imem_bundle = {
-    'r_addr': Bits(C['paddr-width']),
-    'r_data': Flip(Bits(32)),
-    'r_en': Bits(1)
+mem_read_request = {
+    'valid': Bits(1),
+    'ready': Flip(Bits(1)),
+    'addr': Bits(C['paddr-width']),
 }
 
-dmem_bundle = {
-    'r_addr': Bits(C['paddr-width']),
-    'r_data': Flip(Bits(C['core-width'])),
-    'r_en': Bits(1),
-    'w_addr': Bits(C['paddr-width']),
-    'w_data': Bits(C['core-width']),
-    'w_en': Bits(1)
+mem_read_response = {
+    'valid': Flip(Bits(1)),
+    'ready': Bits(1),
+    'addr': Bits(C['paddr-width']),
+    'data': Bits(C['mem-width'])
+}
+
+mem_write_bundle = {
+    'valid': Bits(1),
+    'ready': Flip(Bits(1)),
+    'addr': Bits(C['paddr-width']),
+    'data': Bits(C['mem-width'])
 }
 
 #

@@ -13,8 +13,8 @@ circuit = Circuit('amethyst', True, True)
 
 print('Elaborating...')
 with Context(circuit):
-    # circuit.top = amethyst.Amethyst()
-    circuit.top = dcache.DCache()
+    circuit.top = amethyst.Amethyst()
+    # circuit.top = dcache.DCache()
 
 print('Synthesizing...')
 EmitCircuit(circuit, 'build/amethyst.v')

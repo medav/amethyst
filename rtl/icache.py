@@ -20,7 +20,6 @@ line_width_bytes = line_width // 8
 
 set_addr_width = Log2Ceil(num_sets)
 line_index_width = Log2Ceil(line_width_bytes)
-way_addr_width = Log2Ceil(num_ways)
 
 untag_width = set_addr_width + line_index_width
 tag_width = C['paddr-width'] - untag_width
@@ -58,7 +57,7 @@ def ICache():
         'cpu_req': Input(Bits(C['paddr-width'])),
         'cpu_resp': Output({
             'miss': Bits(1),
-            'data': Bits(C['core-width'])
+            'data': Bits(32)
         })
     })
 

@@ -17,7 +17,10 @@ def MemStage():
 
     io = Io({
         'ex_mem': Input(ex_mem_bundle),
-        'dmem': Output(dmem_bundle),
+        'dmem': Output({
+            'read': mem_read_bundle,
+            'write': mem_write_bundle
+        }),
         'branch': Output(Bits(1)),
         'branch_target': Output(Bits(C['paddr-width'])),
         'mem_wb': Output(mem_wb_bundle),
@@ -42,12 +45,12 @@ def MemStage():
     # from the second source register (if applicable).
     #
 
-    io.dmem.r_addr <<= io.ex_mem.alu_result
-    io.dmem.r_en <<= io.ex_mem.mem_ctrl.mem_read
+    io.dmem.read.r_addr <<= io.ex_mem.alu_result
+    io.dmem.read.r_en <<= io.ex_mem.mem_ctrl.mem_read
 
-    io.dmem.w_addr <<= io.ex_mem.alu_result
-    io.dmem.w_data <<= io.ex_mem.rs2_data
-    io.dmem.w_en <<= io.ex_mem.mem_ctrl.mem_write
+    io.dmem.write.w_addr <<= io.ex_mem.alu_result
+    io.dmem.write.w_data <<= io.ex_mem.rs2_data
+    io.dmem.write.w_en <<= io.ex_mem.mem_ctrl.mem_write
 
     #
     # Similar to the imem, the dmem is assumed to have an internal latch that
@@ -55,6 +58,6 @@ def MemStage():
     # passed through the mem_wb reg or it will be delayed by a cycle.
     #
 
-    io.read_data <<= io.dmem.r_data
+    io.read_data <<= io.dmem.read.r_data
 
     NameSignals(locals())

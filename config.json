@@ -3,6 +3,7 @@
     "reg-count": 32,
     "paddr-width": 64,
     "reset-addr": 0,
+    "mem-width": 512,
 
     "icache": {
         "line-width": 512,
