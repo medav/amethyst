@@ -2,5 +2,16 @@
     "core-width": 64,
     "reg-count": 32,
     "paddr-width": 64,
-    "reset-addr": 0
+    "reset-addr": 0,
+
+    "icache": {
+        "line-width": 512,
+        "num-sets": 64
+    },
+
+    "dcache": {
+        "line-width": 512,
+        "num-sets": 64,
+        "num-ways": 4
+    }
 }

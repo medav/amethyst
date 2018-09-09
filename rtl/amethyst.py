@@ -11,10 +11,10 @@ import forward
 import hazard
 
 @Module
-def GeodeCore():
+def Amethyst():
     io = Io({
-        'imem': Output(imem_bundle),
-        'dmem': Output(dmem_bundle)
+        'imem': Output(mem_bundle),
+        'dmem': Output(mem_bundle)
     })
 
     #

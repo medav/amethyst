@@ -3,6 +3,8 @@ from interfaces import *
 
 from config import config as C
 
+from icache import ICache
+
 @Module
 def IFetchStage():
     """The instruction fetch stage for Geode.
@@ -21,6 +23,8 @@ def IFetchStage():
         'branch': Input(Bits(1)),
         'branch_target': Input(Bits(C['paddr-width']))
     })
+
+    icache = Instance(ICache())
 
     #
     # This is the program counter for Geode. It decides what instruction is
