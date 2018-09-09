@@ -18,8 +18,9 @@ def MemStage():
     io = Io({
         'ex_mem': Input(ex_mem_bundle),
         'dmem': Output({
-            'read': mem_read_bundle,
-            'write': mem_write_bundle
+            'read_req': mem_read_request,
+            'read_resp': mem_read_response,
+            'write_req': mem_write_request
         }),
         'branch': Output(Bits(1)),
         'branch_target': Output(Bits(C['paddr-width'])),

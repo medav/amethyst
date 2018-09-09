@@ -20,7 +20,8 @@ def IFetchStage():
         'if_id': Output(if_id_bundle),
         'inst': Output(Bits(32)),
         'imem': Output({
-            'read': mem_read_bundle
+            'read_req': mem_read_request,
+            'read_resp': mem_read_response
         }),
         'branch': Input(Bits(1)),
         'branch_target': Input(Bits(C['paddr-width']))

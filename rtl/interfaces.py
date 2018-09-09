@@ -19,7 +19,7 @@ mem_read_response = {
     'data': Bits(C['mem-width'])
 }
 
-mem_write_bundle = {
+mem_write_request = {
     'valid': Bits(1),
     'ready': Flip(Bits(1)),
     'addr': Bits(C['paddr-width']),

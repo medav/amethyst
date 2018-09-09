@@ -16,13 +16,20 @@ from config import config as C
 
 num_sets = C['icache']['num-sets']
 line_width = C['icache']['line-width']
-line_width_bytes = line_width // 8
+line_bytes = line_width // 8
 
 set_addr_width = Log2Ceil(num_sets)
-line_index_width = Log2Ceil(line_width_bytes)
+line_index_width = Log2Ceil(line_bytes)
 
 untag_width = set_addr_width + line_index_width
 tag_width = C['paddr-width'] - untag_width
+
+#
+# Constraints
+#
+
+assert line_width % 8 == 0
+assert line_bytes % 4 == 0
 
 #
 # Addresses in this cache are broken up as follows:
@@ -47,7 +54,15 @@ def Aligner():
         'result': Output(Bits(C['core-width']))
     })
 
-    io.result <<= 0
+    index = Index(io.cpu_req)
+    word_index = index(index.width, 2)
+
+    words = Wire([Bits(32) for _ in range(line_bytes // 4)])
+
+    for i in range(line_bytes // 4):
+        words[i] <<= io.line(32 * (i + 1) - 1, i)
+
+    io.result <<= Mux(words, word_index)
 
     NameSignals(locals())
 
