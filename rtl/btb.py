@@ -40,6 +40,7 @@ def BranchTargetBuffer():
         reset_value=[0 for _ in range(btb_size)])
 
     read_entry = Wire(Bits(entry_size))
+
     write_entry = Cat([
         io.update.pc(paddr_width - 1, hash_bits),
         io.update.is_return,

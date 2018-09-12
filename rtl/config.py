@@ -7,11 +7,11 @@ C = json.load(open('config.json', 'r'))
 #
 
 paddr_width = C['paddr-width']
-core_width = core_width
+core_width = C['core-width']
 
 #
 # Check constraints on common options
 #
 
-assert paddr_width < core_width
+assert paddr_width <= core_width
 assert core_width % 8 == 0

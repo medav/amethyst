@@ -26,6 +26,13 @@ def IFetchStage():
             'read_req': mem_read_request,
             'read_resp': mem_read_response
         }),
+        'misspec': Input({
+            'valid': Bits(1),
+            'pc': Bits(paddr_width),
+            'target': Bits(paddr_width),
+            'taken': Bits(1),
+            'is_return': Bits(1)
+        }),
         'branch': Input(Bits(1)),
         'branch_target': Input(Bits(paddr_width))
     })
@@ -34,6 +41,8 @@ def IFetchStage():
     bpred = Instance(BranchPredictor())
     btb = Instance(BranchTargetBuffer())
     ras = Instance(ReturnAddressStack())
+
+    ras.pop.valid <<= False
 
     #
     # This is the program counter for Geode. It decides what instruction is
@@ -57,7 +66,7 @@ def IFetchStage():
     #
 
     pred_pc <<= pc + 4
-    with bp.pred.taken & btb.pred.valid:
+    with bp.pred.taken & btb.pred.valid & ~btb.pred.is_return:
         pred_pc <<= btb.pred.target
 
     #
@@ -65,7 +74,15 @@ def IFetchStage():
     # address stack (RAS) or the correct PC (correction from a misspeculation).
     #
 
-    next_pc
+    with io.misspec.valid:
+        next_pc <<= io.misspec.target
+    with otherwise:
+        with btb.pred.valid & btb.pred.is_return:
+            next_pc <<= ras.pop.address
+            ras.pop.valid <<= True
+
+        with otherwise:
+            next_pc <<= pred_pc
 
     #
     # It is assumed that the imem contains an internal latch that captures read
