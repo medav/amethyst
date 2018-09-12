@@ -5,6 +5,14 @@
     "reset-addr": 0,
     "mem-width": 512,
 
+    "btb": {
+        "size": 64
+    },
+
+    "ras": {
+        "size": 64
+    },
+
     "icache": {
         "line-width": 512,
         "num-sets": 64

@@ -4,6 +4,9 @@ from interfaces import *
 from config import config as C
 
 from icache import ICache
+from bpred import BranchPredictor
+from btb import BranchTargetBuffer
+from ras import ReturnAddressStack
 
 @Module
 def IFetchStage():
@@ -28,6 +31,9 @@ def IFetchStage():
     })
 
     icache = Instance(ICache())
+    bpred = Instance(BranchPredictor())
+    btb = Instance(BranchTargetBuffer())
+    ras = Instance(ReturnAddressStack())
 
     #
     # This is the program counter for Geode. It decides what instruction is
@@ -35,13 +41,31 @@ def IFetchStage():
     #
 
     pc = Reg(Bits(C['paddr-width']), reset_value=C['reset-addr'])
+    pred_pc = Wire(Bits(C['paddr-width']))
+    next_pc = Wire(Bits(C['paddr-width']))
 
-    #
-    # The PC defaults to increment by 4 each cycle.
-    #
+    pc <<= next_pc
 
-    pc <<= pc + 4
+    bpred.cur_pc <<= pc
+    btb.cur_pc <<= pc
     icache.cpu_req <<= pc
+
+    #
+    # The predicted next PC comes from either the next sequential PC or the
+    # predicted target address in the BTB. Note that pred_pc _can_ be wrong and
+    # that's ok because the misspeculation will be caught later in the pipeline.
+    #
+
+    pred_pc <<= pc + 4
+    with bp.pred.taken & btb.pred.valid:
+        pred_pc <<= btb.pred.target
+
+    #
+    # The actual next PC is either the prediction, a value from the return
+    # address stack (RAS) or the correct PC (correction from a misspeculation).
+    #
+
+    next_pc
 
     #
     # It is assumed that the imem contains an internal latch that captures read
