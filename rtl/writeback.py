@@ -1,7 +1,7 @@
 from atlas import *
 from interfaces import *
 
-from config import config as C
+from config import *
 
 @Module
 def WritebackStage():

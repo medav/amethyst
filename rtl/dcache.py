@@ -7,7 +7,7 @@ from instructions import *
 
 import forward
 
-from config import config as C
+from config import *
 
 #
 # Configuration variables (Either pulled from config, or computed based off

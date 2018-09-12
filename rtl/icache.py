@@ -7,7 +7,7 @@ from instructions import *
 
 import forward
 
-from config import config as C
+from config import *
 
 #
 # Configuration variables (Either pulled from config, or computed based off
@@ -22,7 +22,7 @@ set_addr_width = Log2Ceil(num_sets)
 line_index_width = Log2Ceil(line_bytes)
 
 untag_width = set_addr_width + line_index_width
-tag_width = C['paddr-width'] - untag_width
+tag_width = paddr_width - untag_width
 
 #
 # Constraints
@@ -42,16 +42,16 @@ assert line_bytes % 4 == 0
 
 access_rtype = Enum(['read', 'write'])
 
-Tag = lambda addr: addr(C['paddr-width'] - 1, untag_width)
+Tag = lambda addr: addr(paddr_width - 1, untag_width)
 Set = lambda addr: addr(untag_width - 1, line_index_width)
 Index = lambda addr: addr(line_index_width - 1, 0)
 
 @Module
 def Aligner():
     io = Io({
-        'cpu_req': Input(Bits(C['paddr-width'])),
+        'cpu_req': Input(Bits(paddr_width)),
         'line': Input(Bits(line_width)),
-        'result': Output(Bits(C['core-width']))
+        'result': Output(Bits(core_width))
     })
 
     index = Index(io.cpu_req)
@@ -69,7 +69,7 @@ def Aligner():
 @Module
 def ICache():
     io = Io({
-        'cpu_req': Input(Bits(C['paddr-width'])),
+        'cpu_req': Input(Bits(paddr_width)),
         'cpu_resp': Output({
             'miss': Bits(1),
             'data': Bits(32)

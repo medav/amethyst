@@ -1,6 +1,6 @@
 from atlas import *
 
-from config import config as C
+from config import *
 
 #
 # Memory signals

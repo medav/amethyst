@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from atlas import *
 from interfaces import *
 
-from config import config as C
+from config import *
 
 AluSrc = Enum(['RS2', 'IMM'])
 ITypes = Enum(['R', 'I', 'S', 'B', 'U', 'J'])

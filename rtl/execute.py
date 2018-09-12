@@ -6,7 +6,7 @@ from instructions import *
 
 import forward
 
-from config import config as C
+from config import *
 
 class BitOrReduceOperator(Operator):
     """Operator that reduces a bits signal via logic OR."""

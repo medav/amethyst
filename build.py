@@ -4,7 +4,7 @@ import os
 sys.path.append('./rtl')
 
 from atlas import *
-from config import config as C
+from config import *
 import amethyst
 import btb
 

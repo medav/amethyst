@@ -1,7 +1,7 @@
 from atlas import *
 from interfaces import *
 
-from config import config as C
+from config import *
 
 ras_size = C['ras']['size']
 ras_index_width = Log2Ceil(ras_size)

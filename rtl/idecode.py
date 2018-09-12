@@ -5,7 +5,7 @@ from atlas import *
 from interfaces import *
 from instructions import *
 
-from config import config as C
+from config import *
 
 #
 # Helper functions to retrieve information from an instruction. Note that the
