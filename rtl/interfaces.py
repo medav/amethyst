@@ -9,20 +9,20 @@ from config import *
 mem_read_request = {
     'valid': Bits(1),
     'ready': Flip(Bits(1)),
-    'addr': Bits(C['paddr-width']),
+    'addr': Bits(paddr_width),
 }
 
 mem_read_response = {
     'valid': Flip(Bits(1)),
     'ready': Bits(1),
-    'addr': Bits(C['paddr-width']),
+    'addr': Bits(paddr_width),
     'data': Bits(C['mem-width'])
 }
 
 mem_write_request = {
     'valid': Bits(1),
     'ready': Flip(Bits(1)),
-    'addr': Bits(C['paddr-width']),
+    'addr': Bits(paddr_width),
     'data': Bits(C['mem-width'])
 }
 
@@ -32,7 +32,7 @@ mem_write_request = {
 
 inst_data_bundle = {
     'inst': Bits(32),
-    'pc': Bits(C['paddr-width']),
+    'pc': Bits(paddr_width),
     'rs1': Bits(Log2Ceil(C['reg-count'])),
     'rs2': Bits(Log2Ceil(C['reg-count'])),
     'rd': Bits(Log2Ceil(C['reg-count']))
@@ -95,7 +95,7 @@ writeback_ctrl_bundle_reset = {
 reg_write_bundle = {
     'w_addr': Bits(Log2Ceil(C['reg-count'])),
     'w_en': Bits(1),
-    'w_data': Bits(C['core-width'])
+    'w_data': Bits(core_width)
 }
 
 #
@@ -103,7 +103,7 @@ reg_write_bundle = {
 #
 
 if_id_bundle = {
-    'pc': Bits(C['paddr-width']),
+    'pc': Bits(paddr_width),
     'valid': Bits(1),
 }
 
@@ -117,9 +117,9 @@ id_ex_bundle = {
     'mem_ctrl': mem_ctrl_bundle,
     'wb_ctrl': writeback_ctrl_bundle,
     'inst_data': inst_data_bundle,
-    'rs1_data': Bits(C['core-width']),
-    'rs2_data': Bits(C['core-width']),
-    'imm': Bits(C['core-width'])
+    'rs1_data': Bits(core_width),
+    'rs2_data': Bits(core_width),
+    'imm': Bits(core_width)
 }
 
 id_ex_bundle_reset = {
@@ -136,9 +136,9 @@ ex_mem_bundle = {
     'mem_ctrl': mem_ctrl_bundle,
     'wb_ctrl': writeback_ctrl_bundle,
     'inst_data': inst_data_bundle,
-    'branch_target': Bits(C['paddr-width']),
-    'rs2_data': Bits(C['core-width']),
-    'alu_result': Bits(C['core-width']),
+    'branch_target': Bits(paddr_width),
+    'rs2_data': Bits(core_width),
+    'alu_result': Bits(core_width),
     'alu_flags': alu_flags
 }
 
@@ -155,7 +155,7 @@ ex_mem_bundle_reset = {
 mem_wb_bundle = {
     'wb_ctrl': writeback_ctrl_bundle,
     'inst_data': inst_data_bundle,
-    'alu_result': Bits(C['core-width']),
+    'alu_result': Bits(core_width),
 }
 
 mem_wb_bundle_reset = {

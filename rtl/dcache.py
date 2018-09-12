@@ -24,7 +24,7 @@ line_index_width = Log2Ceil(line_width_bytes)
 way_addr_width = Log2Ceil(num_ways)
 
 untag_width = set_addr_width + line_index_width
-tag_width = C['paddr-width'] - untag_width
+tag_width = paddr_width - untag_width
 
 #
 # Addresses in this cache are broken up as follows:
@@ -38,14 +38,14 @@ tag_width = C['paddr-width'] - untag_width
 access_size = Enum(['byte', 'half', 'word', 'dword'])
 access_rtype = Enum(['read', 'write'])
 
-Tag = lambda addr: addr(C['paddr-width'] - 1, untag_width)
+Tag = lambda addr: addr(paddr_width - 1, untag_width)
 Set = lambda addr: addr(untag_width - 1, line_index_width)
 Index = lambda addr: addr(line_index_width - 1, 0)
 
 cpu_dcache_req = {
     'valid': Bits(1),
     'size': Bits(access_size.bitwidth),
-    'addr': Bits(C['paddr-width']),
+    'addr': Bits(paddr_width),
     'rtype': Bits(access_rtype.bitwidth)
 }
 
@@ -58,10 +58,10 @@ cpu_dcache_req_reset = {
 
 cpu_dcache_resp = {
     'valid': Bits(1),
-    'data': Bits(C['core-width'])
+    'data': Bits(core_width)
 }
 
-meta_query_req = Bits(C['paddr-width'])
+meta_query_req = Bits(paddr_width)
 
 meta_query_resp = {
     'hit': Bits(1),
@@ -150,7 +150,7 @@ def Aligner():
     io = Io({
         'cpu_req': Input(cpu_dcache_req),
         'line': Input(Bits(line_width)),
-        'result': Output(Bits(C['core-width']))
+        'result': Output(Bits(core_width))
     })
 
     io.result <<= 0

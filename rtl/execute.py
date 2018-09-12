@@ -45,14 +45,14 @@ def ArithmeticLogicUnit():
     """The primary arithmetic/logic unit for Geode."""
 
     io = Io({
-        'op0': Input(Bits(C['core-width'])),
-        'op1': Input(Bits(C['core-width'])),
+        'op0': Input(Bits(core_width)),
+        'op1': Input(Bits(core_width)),
         'alu_inst': Input(Bits(AluInsts.width)),
-        'result': Output(Bits(C['core-width'])),
+        'result': Output(Bits(core_width)),
         'flags': Output(alu_flags)
     })
 
-    zero = Wire(Bits(C['core-width']))
+    zero = Wire(Bits(core_width))
     shift_op = Wire(Bits(1))
 
     #
@@ -84,14 +84,14 @@ def ArithmeticLogicUnit():
     sll_result = io.op0 << shamt
     srl_result = io.op0 >> shamt
 
-    result = Wire(Bits(C['core-width'] * 2))
-    io.result <<= result(C['core-width'] - 1, 0)
+    result = Wire(Bits(core_width * 2))
+    io.result <<= result(core_width - 1, 0)
 
     result <<= 0
 
     io.flags.zero <<= (result == 0)
     io.flags.sign <<= result(result.width - 1, result.width - 1)
-    io.flags.overflow <<= BitOrReduce(result(result.width - 1, C['core-width']))
+    io.flags.overflow <<= BitOrReduce(result(result.width - 1, core_width))
 
     #
     # The following essentially produces a mux that selects an output produced
@@ -173,8 +173,8 @@ def ExecuteStage():
         'id_ex': Input(id_ex_bundle),
         'fwd1_select': Input(Bits(forward.fwd.bitwidth)),
         'fwd2_select': Input(Bits(forward.fwd.bitwidth)),
-        'fwd_mem_data': Input(Bits(C['core-width'])),
-        'fwd_wb_data': Input(Bits(C['core-width'])),
+        'fwd_mem_data': Input(Bits(core_width)),
+        'fwd_wb_data': Input(Bits(core_width)),
         'ex_mem': Output(ex_mem_bundle)
     })
 
@@ -194,8 +194,8 @@ def ExecuteStage():
     # Forwarding Logic
     #
 
-    rs1_fwd = Wire(Bits(C['core-width']))
-    rs2_fwd = Wire(Bits(C['core-width']))
+    rs1_fwd = Wire(Bits(core_width))
+    rs2_fwd = Wire(Bits(core_width))
 
     rs1_fwd <<= io.id_ex.rs1_data
 

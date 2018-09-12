@@ -3,7 +3,7 @@ from interfaces import *
 
 from config import *
 
-paddr_width = C['paddr-width']
+paddr_width = paddr_width
 btb_size = C['btb']['size']
 hash_bits = Log2Ceil(btb_size)
 tag_bits = paddr_width - hash_bits

@@ -27,7 +27,7 @@ def IFetchStage():
             'read_resp': mem_read_response
         }),
         'branch': Input(Bits(1)),
-        'branch_target': Input(Bits(C['paddr-width']))
+        'branch_target': Input(Bits(paddr_width))
     })
 
     icache = Instance(ICache())
@@ -40,9 +40,9 @@ def IFetchStage():
     # next to be executed.
     #
 
-    pc = Reg(Bits(C['paddr-width']), reset_value=C['reset-addr'])
-    pred_pc = Wire(Bits(C['paddr-width']))
-    next_pc = Wire(Bits(C['paddr-width']))
+    pc = Reg(Bits(paddr_width), reset_value=C['reset-addr'])
+    pred_pc = Wire(Bits(paddr_width))
+    next_pc = Wire(Bits(paddr_width))
 
     pc <<= next_pc
 
