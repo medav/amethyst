@@ -17,14 +17,14 @@ def WritebackStage():
         'reg_write': Output(reg_write_bundle)
     })
 
-    io.reg_write.w_addr <<= io.mem_wb.inst_data.rd
+    io.reg_write.w_addr <<= io.mem_wb.ctrl.inst.rd
 
     #
     # Register write data can come from either the result of the ex stage (the
     # alu) or the mem stage (the dmem).
     #
 
-    with io.mem_wb.wb_ctrl.mem_to_reg:
+    with io.mem_wb.ctrl.wb.mem_to_reg:
         io.reg_write.w_data <<= io.mem_read_data
     with otherwise:
         io.reg_write.w_data <<= io.mem_wb.alu_result
@@ -34,6 +34,6 @@ def WritebackStage():
     # not update a register simply set their rd to zero (which is ignored).
     #
 
-    io.reg_write.w_en <<= 1
+    io.reg_write.w_en <<= io.mem_wb.ctrl.wb.write_reg
 
     NameSignals(locals())

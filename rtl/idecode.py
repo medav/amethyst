@@ -19,7 +19,7 @@ Rs2 = lambda inst: inst(24, 20)
 Funct3 = lambda inst: inst(14, 12)
 Funct7 = lambda inst: inst(31, 25)
 
-def SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl):
+def SetControlSignals(inst_spec, itype, ctrl.ex, ctrl.mem, ctrl.wb):
     """Update given control signals based on inst_spec."""
 
     itype <<= inst_spec.itype
@@ -30,11 +30,11 @@ def SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl):
     # below).
     #
 
-    ex_ctrl <<= inst_spec.ex_ctrl.Literal()
-    mem_ctrl <<= inst_spec.mem_ctrl.Literal()
-    wb_ctrl <<= inst_spec.wb_ctrl.Literal()
+    ctrl.ex <<= inst_spec.ctrl.ex.Literal()
+    ctrl.mem <<= inst_spec.ctrl.mem.Literal()
+    ctrl.wb <<= inst_spec.ctrl.wb.Literal()
 
-def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
+def Control(inst, itype, ctrl):
     """Primary control logic for Geode."""
 
     #
@@ -54,16 +54,16 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
 
     itype <<= 0
 
-    ex_ctrl.alu_src <<= 0
-    ex_ctrl.alu_op <<= 0
-    ex_ctrl.funct3 <<= funct3
-    ex_ctrl.funct7 <<= funct7
+    ctrl.ex.alu_src <<= 0
+    ctrl.ex.alu_op <<= 0
+    ctrl.ex.funct3 <<= funct3
+    ctrl.ex.funct7 <<= funct7
 
-    mem_ctrl.branch <<= 0
-    mem_ctrl.mem_write <<= 0
-    mem_ctrl.mem_read <<= 0
+    ctrl.mem.branch <<= 0
+    ctrl.mem.mem_write <<= 0
+    ctrl.mem.mem_read <<= 0
 
-    wb_ctrl.mem_to_reg <<= 0
+    ctrl.wb.mem_to_reg <<= 0
 
     #
     # This part here really shows the power / advantage of Atlas's meta-
@@ -94,7 +94,7 @@ def Control(inst, itype, ex_ctrl, mem_ctrl, wb_ctrl):
             funct7_match = funct7 == inst_spec.pattern.funct7
 
         with opcode_match & funct3_match & funct7_match:
-            SetControlSignals(inst_spec, itype, ex_ctrl, mem_ctrl, wb_ctrl)
+            SetControlSignals(inst_spec, itype, ctrl)
 
 def GenerateImmediate(inst, itype):
     imm = Wire(Bits(32))
@@ -286,12 +286,7 @@ def IDecodeStage():
     # 'instructions' variable above.
     #
 
-    Control(
-        inst,
-        itype,
-        io.id_ex.ex_ctrl,
-        io.id_ex.mem_ctrl,
-        io.id_ex.wb_ctrl)
+    Control(inst, itype, io.id_ex.ctrl)
 
     #
     # GenerateImmediate produces logic that consume the itype (instruction

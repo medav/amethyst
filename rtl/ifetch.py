@@ -22,9 +22,12 @@ def IFetchStage():
     io = Io({
         'if_id': Output(if_id_bundle),
         'inst': Output(Bits(32)),
-        'imem': Output({
-            'read_req': mem_read_request,
-            'read_resp': mem_read_response
+        'icache': Output({
+            'cpu_req': Bits(paddr_width),
+            'cpu_resp': Flip({
+                'miss': Bits(1),
+                'data': Bits(32)
+            })
         }),
         'misspec': Input({
             'valid': Bits(1),
@@ -37,7 +40,6 @@ def IFetchStage():
         'branch_target': Input(Bits(paddr_width))
     })
 
-    icache = Instance(ICache())
     bpred = Instance(BranchPredictor())
     btb = Instance(BranchTargetBuffer())
     ras = Instance(ReturnAddressStack())
@@ -104,7 +106,7 @@ def IFetchStage():
     #
 
     io.if_id.pc <<= pc
-    io.if_id.valid <<= ~io.branch & ~icache.cpu_resp.miss
-    io.if_id.inst <<= icache.cpu_resp.data
+    io.if_id.valid <<= ~io.branch & ~io.icache.cpu_resp.miss
+    io.if_id.inst <<= io.icache.cpu_resp.data
 
     NameSignals(locals())

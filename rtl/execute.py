@@ -178,9 +178,7 @@ def ExecuteStage():
         'ex_mem': Output(ex_mem_bundle)
     })
 
-    io.ex_mem.mem_ctrl <<= io.id_ex.mem_ctrl
-    io.ex_mem.wb_ctrl <<= io.id_ex.wb_ctrl
-    io.ex_mem.inst_data <<= io.id_ex.inst_data
+    io.ex_mem.ctrl <<= io.id_ex.ctrl
 
     alu = Instance(ArithmeticLogicUnit())
 

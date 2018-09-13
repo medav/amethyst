@@ -75,9 +75,9 @@ class MemCtrl(object):
 
     def Literal(self):
         return {
-            'branch': 1 if self.branch else 0,
-            'mem_write': 1 if self.mem_write else 0,
-            'mem_read': 1 if self.mem_read else 0
+            'branch': self.branch,
+            'mem_write': self.mem_write,
+            'mem_read': self.mem_read
         }
 
     @staticmethod
@@ -89,19 +89,25 @@ class WbCtrl(object):
     """Writeback control signals bundle."""
 
     mem_to_reg : bool
+    write_reg : bool
 
     def Literal(self):
         return {
-            'mem_to_reg': 1 if self.mem_to_reg else 0
+            'mem_to_reg': self.mem_to_reg,
+            'write_reg': self.write_reg
         }
 
     @staticmethod
     def Reg():
-        return WbCtrl(False)
+        return WbCtrl(False, True)
 
     @staticmethod
     def Mem():
-        return WbCtrl(True)
+        return WbCtrl(True, True)
+
+    @staticmethod
+    def Nop():
+        return WbCtrl(False, False)
 
 @dataclass
 class Inst(object):
@@ -351,42 +357,42 @@ instructions = {
         Pattern(Opcodes.BRANCH, 0b000, None),
         ExCtrl(AluSrc.RS2, 0b01),
         MemCtrl(True, False, False),
-        WbCtrl.Reg()
+        WbCtrl.Nop()
     ),
 
     'bne': Inst.B(
         Pattern(Opcodes.BRANCH, 0b001, None),
         ExCtrl(AluSrc.RS2, 0b01),
         MemCtrl(True, False, False),
-        WbCtrl.Reg()
+        WbCtrl.Nop()
     ),
 
     'blt': Inst.B(
         Pattern(Opcodes.BRANCH, 0b100, None),
         ExCtrl(AluSrc.RS2, 0b01),
         MemCtrl(True, False, False),
-        WbCtrl.Reg()
+        WbCtrl.Nop()
     ),
 
     'bge': Inst.B(
         Pattern(Opcodes.BRANCH, 0b101, None),
         ExCtrl(AluSrc.RS2, 0b01),
         MemCtrl(True, False, False),
-        WbCtrl.Reg()
+        WbCtrl.Nop()
     ),
 
     'bltu': Inst.B(
         Pattern(Opcodes.BRANCH, 0b110, None),
         ExCtrl(AluSrc.RS2, 0b01),
         MemCtrl(True, False, False),
-        WbCtrl.Reg()
+        WbCtrl.Nop()
     ),
 
     'bgeu': Inst.B(
         Pattern(Opcodes.BRANCH, 0b111, None),
         ExCtrl(AluSrc.RS2, 0b01),
         MemCtrl(True, False, False),
-        WbCtrl.Reg()
+        WbCtrl.Nop()
     ),
 
     #
@@ -408,7 +414,7 @@ instructions = {
         Pattern(Opcodes.JAL, None, None),
         ExCtrl(AluSrc.RS2, 0b00),
         MemCtrl(True, False, False),
-        WbCtrl.Reg()
+        WbCtrl.Nop()
     )
 }
 

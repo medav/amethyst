@@ -28,8 +28,7 @@ def MemStage():
         'read_data': Output(Bits(core_width))
     })
 
-    io.mem_wb.wb_ctrl <<= io.ex_mem.wb_ctrl
-    io.mem_wb.inst_data <<= io.ex_mem.inst_data
+    io.mem_wb.ctrl <<= io.ex_mem.ctrl
     io.mem_wb.alu_result <<= io.ex_mem.alu_result
 
     #

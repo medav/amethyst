@@ -61,38 +61,19 @@ cpu_dcache_resp = {
     'data': Bits(core_width)
 }
 
-meta_query_req = Bits(paddr_width)
-
-meta_query_resp = {
-    'hit': Bits(1),
-    'way': Bits(way_addr_width)
-}
-
-meta_write = {
-    'write': Bits(1),
-    'set': Bits(set_addr_width),
-    'tag': Bits(tag_width)
-}
-
-data_read_req = {
-    'set': Bits(set_addr_width),
-    'way': Bits(way_addr_width)
-}
-
-data_read_resp = Bits(line_width)
-
-# @Module
-# def Mshr():
-#     io = Io({
-
-#     })
-
 @Module
 def DCacheMetaArray():
     io = Io({
-        'query_req': Input(meta_query_req),
-        'query_resp': Output(meta_query_resp),
-        'write': Input(meta_write)
+        'query_req': Input(Bits(paddr_width)),
+        'query_resp': Output({
+            'hit': Bits(1),
+            'way': Bits(way_addr_width)
+        }),
+        'update': Input({
+            'valid': Bits(1),
+            'set': Bits(set_addr_width),
+            'tag': Bits(tag_width)
+        })
     })
 
     meta_read_data = Wire(Bits(num_ways * tag_width))
@@ -129,8 +110,11 @@ def DCacheMetaArray():
 @Module
 def DCacheDataArray():
     io = Io({
-        'read_req': Input(data_read_req),
-        'read_resp': Output(data_read_resp)
+        'read_req': Input({
+            'set': Bits(set_addr_width),
+            'way': Bits(way_addr_width)
+        }),
+        'read_resp': Output(Bits(line_width))
     })
 
     read_result = Wire(Bits(num_ways * line_width))
@@ -172,7 +156,10 @@ def DCache():
 
     s1_req = Wire(cpu_dcache_req)
     s2_req = Reg(cpu_dcache_req, reset_value=cpu_dcache_req_reset)
+
     miss_active = Reg(Bits(1), reset_value=False)
+    miss_req_sent = Reg(Bits(1), reset_value=False)
+    miss_evict_sent = Reg(Bits(1), reset_value=False)
 
     #
     # Stage 1: Metadata read
@@ -194,11 +181,88 @@ def DCache():
     data_array.read_req.way <<= meta_array.query_resp.way
 
     #
-    # Miss handling
+    # Miss Handling
     #
 
-    miss_active <<= ~meta_array.query_resp.hit
-    io.stall <<= ~meta_array.query_resp.hit | miss_active
+    miss_active <<= ~meta_array.quer_resp.hit
+    io.cpu_resp.miss <<= miss_active | ~meta_array.quer_resp.hit
+
+    #
+    # Handle sending the memory request for a miss. This can wait an arbitrary
+    # number of cycles for the memory to become ready.
+    #
+    # Note: This icache assumes the requested addr is held constant until the
+    # miss has been serviced.
+    #
+
+    io.dmem.read_req.addr <<= io.cpu_req
+    io.dmem.read_req.valid <<= False
+    io.dmem.write_req.
+
+    with ~miss_req_sent & (miss_active | ~hit):
+        io.dmem.read_req.valid <<= True
+
+        with io.dmem.read_req.ready:
+            miss_req_sent <<= True
+
+    #
+    # Now wait for the respone. When it comes in, pick a way to replace and
+    # update the meta and data arrays. For now, just replace a random line
+    # determined by a modulo cycle counter (replace_way).
+    #
+
+    replace_way = Reg(Bits(way_addr_width), reset_value=0)
+    replace_way <<= replace_way + 1
+
+    meta_write = Wire(Bits(1))
+    data_write = Wire(Bits(1))
+
+    ready_for_mem = Wire(Bits(1))
+    ready_for_mem <<= miss_active & miss_req_sent
+
+    io.imem.read_resp.ready <<= ready_for_mem
+
+    #
+    # Compute the new meta and data to write to the meta array. This is the
+    # same as the original metadata with the tag corresponding to replace_way
+    # replaced with the tag of the current request.
+    #
+
+    new_data = Wire([Bits(line_width) for _ in range(num_ways)])
+    new_tags = Wire([Bits(tag_width) for _ in range(num_ways)])
+
+    for way in range(num_ways):
+        with replace_way == way:
+            new_tags[way] <<= Tag(io.cpu_req)
+            new_data[way] <<= Tag(io.imem.read_resp.data)
+        with otherwise:
+            new_tags[way] <<= GetTag(meta, way)
+            new_data[way] <<= GetData(data, way)
+
+    meta_write_data = Cat(reversed([
+        new_tags[way]
+        for way in range(num_ways)
+    ]))
+
+    data_write_data = Cat(reversed([
+        new_data[way]
+        for way in range(num_ways)
+    ]))
+
+    #
+    # Similarly, compute the data to write to the data array.
+    #
+
+    complete_miss = Wire(Bits(1))
+    complete_miss <<= io.imem.read_resp.valid & ready_for_mem
+
+    with complete_miss:
+        miss_active <<= False
+        miss_req_sent <<= False
+        valid_bits[way][Set(io.cpu_req)] <<= True
+
+    meta_array.Write(Set(io.cpu_req), meta_write_data, complete_miss)
+    data_array.Write(Set(io.cpu_req), data_write_data, complete_miss)
 
     NameSignals(locals())
 

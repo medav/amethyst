@@ -30,7 +30,7 @@ mem_write_request = {
 # Control signal bundles
 #
 
-inst_data_bundle = {
+inst_bundle = {
     'inst': Bits(32),
     'pc': Bits(paddr_width),
     'rs1': Bits(Log2Ceil(C['reg-count'])),
@@ -38,7 +38,7 @@ inst_data_bundle = {
     'rd': Bits(Log2Ceil(C['reg-count']))
 }
 
-inst_data_bundle_reset = {
+inst_bundle_reset = {
     'inst': 0,
     'pc': 0,
     'rs1': 0,
@@ -67,9 +67,9 @@ alu_flags = {
 }
 
 alu_flags_reset = {
-    'zero': 0,
+    'zero': False,
     'sign': 0,
-    'overflow': 0
+    'overflow': False
 }
 
 mem_ctrl_bundle = {
@@ -79,9 +79,9 @@ mem_ctrl_bundle = {
 }
 
 mem_ctrl_bundle_reset = {
-    'branch': 0,
-    'mem_write': 0,
-    'mem_read': 0
+    'branch': False,
+    'mem_write': False,
+    'mem_read': False
 }
 
 writeback_ctrl_bundle = {
@@ -89,7 +89,23 @@ writeback_ctrl_bundle = {
 }
 
 writeback_ctrl_bundle_reset = {
-    'mem_to_reg': 0
+    'mem_to_reg': False
+}
+
+ctrl_bundle = {
+    'valid': Bits(1),
+    'inst': inst_bundle,
+    'ex': execute_ctrl_bundle,
+    'mem': mem_ctrl_bundle,
+    'wb': writeback_ctrl_bundle
+}
+
+ctrl_bundle_reset = {
+    'valid': False,
+    'inst': inst_bundle_reset,
+    'ex': execute_ctrl_bundle_reset,
+    'mem': mem_ctrl_bundle_reset,
+    'wb': writeback_ctrl_bundle_reset
 }
 
 reg_write_bundle = {
@@ -103,40 +119,33 @@ reg_write_bundle = {
 #
 
 if_id_bundle = {
-    'pc': Bits(paddr_width),
     'valid': Bits(1),
+    'pc': Bits(paddr_width),
     'inst': Bits(32)
 }
 
 if_id_bundle_reset = {
+    'valid': False,
     'pc': 0,
-    'valid': 0
+    'inst': 0
 }
 
 id_ex_bundle = {
-    'ex_ctrl': execute_ctrl_bundle,
-    'mem_ctrl': mem_ctrl_bundle,
-    'wb_ctrl': writeback_ctrl_bundle,
-    'inst_data': inst_data_bundle,
+    'ctrl': ctrl_bundle,
     'rs1_data': Bits(core_width),
     'rs2_data': Bits(core_width),
     'imm': Bits(core_width)
 }
 
 id_ex_bundle_reset = {
-    'ex_ctrl': execute_ctrl_bundle_reset,
-    'mem_ctrl': mem_ctrl_bundle_reset,
-    'wb_ctrl': writeback_ctrl_bundle_reset,
-    'inst_data': inst_data_bundle_reset,
+    'ctrl': ctrl_bundle_reset,
     'rs1_data': 0,
     'rs2_data': 0,
     'imm': 0
 }
 
 ex_mem_bundle = {
-    'mem_ctrl': mem_ctrl_bundle,
-    'wb_ctrl': writeback_ctrl_bundle,
-    'inst_data': inst_data_bundle,
+    'ctrl': ctrl_bundle,
     'branch_target': Bits(paddr_width),
     'rs2_data': Bits(core_width),
     'alu_result': Bits(core_width),
@@ -144,9 +153,7 @@ ex_mem_bundle = {
 }
 
 ex_mem_bundle_reset = {
-    'mem_ctrl': mem_ctrl_bundle_reset,
-    'wb_ctrl': writeback_ctrl_bundle_reset,
-    'inst_data': inst_data_bundle_reset,
+    'ctrl': ctrl_bundle_reset,
     'branch_target': 0,
     'rs2_data': 0,
     'alu_result': 0,
@@ -154,13 +161,11 @@ ex_mem_bundle_reset = {
 }
 
 mem_wb_bundle = {
-    'wb_ctrl': writeback_ctrl_bundle,
-    'inst_data': inst_data_bundle,
+    'ctrl': ctrl_bundle,
     'alu_result': Bits(core_width),
 }
 
 mem_wb_bundle_reset = {
-    'wb_ctrl': writeback_ctrl_bundle_reset,
-    'inst_data': inst_data_bundle_reset,
+    'ctrl': ctrl_bundle_reset,
     'alu_result': 0
 }
