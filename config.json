@@ -15,7 +15,8 @@
 
     "icache": {
         "line-width": 512,
-        "num-sets": 64
+        "num-sets": 64,
+        "num-ways": 4
     },
 
     "dcache": {

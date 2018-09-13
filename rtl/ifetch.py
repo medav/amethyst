@@ -66,7 +66,7 @@ def IFetchStage():
     #
 
     pred_pc <<= pc + 4
-    with bp.pred.taken & btb.pred.valid & ~btb.pred.is_return:
+    with bpred.pred.taken & btb.pred.valid & ~btb.pred.is_return:
         pred_pc <<= btb.pred.target
 
     #
