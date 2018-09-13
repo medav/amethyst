@@ -232,7 +232,6 @@ def IDecodeStage():
 
     io = Io({
         'if_id': Input(if_id_bundle),
-        'inst': Input(Bits(32)),
         'reg_write': Input(reg_write_bundle),
         'id_ex': Output(id_ex_bundle)
     })
@@ -246,7 +245,7 @@ def IDecodeStage():
     #
 
     with io.if_id.valid:
-        inst <<= io.inst
+        inst <<= io.if_id.inst
     with otherwise:
         inst <<= 0
 

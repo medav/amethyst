@@ -45,6 +45,12 @@ def IFetchStage():
     ras.pop.valid <<= False
 
     #
+    # Hook up the icache to the imem ports
+    #
+
+    io.imem <<= icache.imem
+
+    #
     # This is the program counter for Geode. It decides what instruction is
     # next to be executed.
     #
@@ -53,7 +59,8 @@ def IFetchStage():
     pred_pc = Wire(Bits(paddr_width))
     next_pc = Wire(Bits(paddr_width))
 
-    pc <<= next_pc
+    with ~icache.cpu_resp.miss:
+        pc <<= next_pc
 
     bpred.cur_pc <<= pc
     btb.cur_pc <<= pc
@@ -98,15 +105,6 @@ def IFetchStage():
 
     io.if_id.pc <<= pc
     io.if_id.valid <<= ~io.branch & ~icache.cpu_resp.miss
-    io.inst <<= icache.cpu_resp.data
-
-    #
-    # When a branch is in the mem stage, it will decide whether it is taken or
-    # not. If it is, the branch and branch_target signals are used to update the
-    # pc to change the control flow.
-    #
-
-    with io.branch:
-        pc <<= io.branch_target
+    io.if_id.inst <<= icache.cpu_resp.data
 
     NameSignals(locals())
