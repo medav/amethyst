@@ -23,9 +23,9 @@ def MemStage():
             'write_req': mem_write_request
         }),
         'branch': Output(Bits(1)),
-        'branch_target': Output(Bits(paddr_width)),
+        'branch_target': Output(Bits(C['paddr-width'])),
         'mem_wb': Output(mem_wb_bundle),
-        'read_data': Output(Bits(core_width))
+        'read_data': Output(Bits(C['core-width']))
     })
 
     io.mem_wb.ctrl <<= io.ex_mem.ctrl

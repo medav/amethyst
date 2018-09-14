@@ -11,15 +11,15 @@ def ReturnAddressStack():
     io = Io({
         'push': Input({
             'valid': Bits(1),
-            'address': Bits(paddr_width)
+            'address': Bits(C['paddr-width'])
         }),
         'pop': Output({
             'valid': Flip(Bits(1)),
-            'address': Bits(paddr_width)
+            'address': Bits(C['paddr-width'])
         })
     })
 
-    rstack = Mem(paddr_width, ras_size)
+    rstack = Mem(C['paddr-width'], ras_size)
 
     #
     # The return address stack is implemented as a circular buffer so values

@@ -3,17 +3,17 @@ from interfaces import *
 
 from config import *
 
-paddr_width = paddr_width
+C['paddr-width'] = C['paddr-width']
 btb_size = C['btb']['size']
 hash_bits = Log2Ceil(btb_size)
-tag_bits = paddr_width - hash_bits
+tag_bits = C['paddr-width'] - hash_bits
 flag_bits = 1
 
-entry_size = tag_bits + flag_bits + paddr_width
+entry_size = tag_bits + flag_bits + C['paddr-width']
 
 Tag = lambda btb_entry: btb_entry(entry_size - 1, entry_size - tag_bits)
-IsReturn = lambda btb_entry: btb_entry(entry_size - tag_bits - 1, paddr_width)
-Target = lambda btb_entry: btb_entry(paddr_width - 1, 0)
+IsReturn = lambda btb_entry: btb_entry(entry_size - tag_bits - 1, C['paddr-width'])
+Target = lambda btb_entry: btb_entry(C['paddr-width'] - 1, 0)
 
 def BtbHashFunction(pc):
     return pc(hash_bits, 0)
@@ -21,16 +21,16 @@ def BtbHashFunction(pc):
 @Module
 def BranchTargetBuffer():
     io = Io({
-        'cur_pc': Input(Bits(paddr_width)),
+        'cur_pc': Input(Bits(C['paddr-width'])),
         'pred': Output({
             'valid': Bits(1),
             'is_return': Bits(1),
-            'target': Bits(paddr_width)
+            'target': Bits(C['paddr-width'])
         }),
         'update': Input({
             'valid': Bits(1),
-            'pc': Bits(paddr_width),
-            'target': Bits(paddr_width),
+            'pc': Bits(C['paddr-width']),
+            'target': Bits(C['paddr-width']),
             'is_return': Bits(1)
         })
     })
@@ -60,7 +60,7 @@ def BranchTargetBuffer():
     table_index = BtbHashFunction(io.cur_pc)
     read_entry <<= table.Read(table_index)
 
-    tag_match <<= Tag(read_entry) == io.cur_pc(paddr_width - 1, hash_bits)
+    tag_match <<= Tag(read_entry) == io.cur_pc(C['paddr-width'] - 1, hash_bits)
 
     #
     # The prediction is only valid when the read tag matches _and_ the entry is
@@ -82,7 +82,7 @@ def BranchTargetBuffer():
     #
 
     write_entry = Cat([
-        io.update.pc(paddr_width - 1, hash_bits),
+        io.update.pc(C['paddr-width'] - 1, hash_bits),
         io.update.is_return,
         io.update.target
     ])

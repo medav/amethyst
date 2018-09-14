@@ -170,10 +170,10 @@ def RegisterFile():
         'r0_addr': Input(Bits(Log2Ceil(C['reg-count']))),
         'r1_addr': Input(Bits(Log2Ceil(C['reg-count']))),
         'w0_addr': Input(Bits(Log2Ceil(C['reg-count']))),
-        'w0_data': Input(Bits(core_width)),
+        'w0_data': Input(Bits(C['core-width'])),
         'w0_en' : Input(Bits(1)),
-        'r0_data': Output(Bits(core_width)),
-        'r1_data': Output(Bits(core_width))
+        'r0_data': Output(Bits(C['core-width'])),
+        'r1_data': Output(Bits(C['core-width']))
     })
 
     #
@@ -193,7 +193,7 @@ def RegisterFile():
     #
 
     reg_array = Reg(
-        [Bits(core_width) for _ in range(C['reg-count'])],
+        [Bits(C['core-width']) for _ in range(C['reg-count'])],
         reset_value=[0 for _ in range(C['reg-count'])])
 
     #

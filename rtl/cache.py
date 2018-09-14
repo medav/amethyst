@@ -10,21 +10,61 @@ import forward
 from config import *
 
 #
-# Configuration variables (Either pulled from config, or computed based off
-# values from config).
+# Since this code is used for both the I+D caches, some disambiguation between
+# the parameter sets is needed. The CacheConfig class holds all the relevant
+# parameters specific to each cache.
 #
 
-num_sets = C['dcache']['num-sets']
-num_ways = C['dcache']['num-ways']
-line_width = C['dcache']['line-width']
-line_width_bytes = line_width // 8
+@dataclass(unsafe_hash=True)
+class CacheConfig(object):
 
-set_addr_width = Log2Ceil(num_sets)
-line_index_width = Log2Ceil(line_width_bytes)
-way_addr_width = Log2Ceil(num_ways)
+    #
+    # Parameters supplied via global config.
+    #
 
-untag_width = set_addr_width + line_index_width
-tag_width = paddr_width - untag_width
+    cache_type : str
+    num_sets : int
+    num_ways : int
+    line_width : int
+
+    #
+    # Parameters computed from above.
+    #
+
+    set_addr_width : int = None
+    way_addr_width : int = None
+    line_width_bytes : int = None
+    line_index_width : int = None
+    untag_width : int = None
+    tag_width : int = None
+
+    def __post_init__(self):
+        self.set_addr_width = Log2Ceil(self.num_sets)
+        self.way_addr_width = Log2Ceil(self.num_ways)
+        self.line_width_bytes = self.line_width // 8
+        self.line_index_width = Log2Ceil(self.line_width_bytes)
+        self.untag_width = self.set_addr_width + self.line_index_width
+        self.tag_width = C['paddr-width'] - self.untag_width
+
+    def AddrTag(self, addr):
+        return addr(C['paddr-width'] - 1, self.untag_width)
+
+    def AddrSet(self, addr):
+        return addr(self.untag_width - 1, self.line_index_width)
+
+    def AddrIndex(self, addr):
+        return addr(self.line_index_width - 1, 0)
+
+    def MetaTag(self, meta, way):
+        return meta(self.tag_width * (way + 1) - 1, self.tag_width * way)
+
+    @staticmethod
+    def FromCacheType(cache_type):
+        return CacheConfig(
+            cache_type=cache_type
+            num_sets=C[cache_type]['num-sets'],
+            num_ways=C[cache_type]['num-ways'],
+            line_width=C[cache_type]['line-size'])
 
 #
 # Addresses in this cache are broken up as follows:
@@ -38,64 +78,42 @@ tag_width = paddr_width - untag_width
 access_size = Enum(['byte', 'half', 'word', 'dword'])
 access_rtype = Enum(['read', 'write'])
 
-Tag = lambda addr: addr(paddr_width - 1, untag_width)
-Set = lambda addr: addr(untag_width - 1, line_index_width)
-Index = lambda addr: addr(line_index_width - 1, 0)
-GetTag = lambda meta, way: meta(tag_width * (way + 1) - 1, tag_width * way)
-GetData = lambda data, way: data(line_width * (way + 1) - 1, line_width * way)
-
-cpu_dcache_req = {
-    'valid': Bits(1),
-    'size': Bits(access_size.bitwidth),
-    'addr': Bits(paddr_width),
-    'rtype': Bits(access_rtype.bitwidth)
-}
-
-cpu_dcache_req_reset = {
-    'valid': False,
-    'size': 0,
-    'addr': 0,
-    'rtype': 0
-}
-
-cpu_dcache_resp = {
-    'valid': Bits(1),
-    'data': Bits(core_width)
-}
-
 @Module
-def CacheMetaArray():
+def CacheMetaArray(CC : CacheConfig):
     io = Io({
         'read': Input({
-            'set': Bits(set_addr_Width)
+            'addr': Bits(C['paddr-width'])
         }),
         'resp': Output({
             'hit': Bits(1),
-            'way': Bits(way_addr_width)
+            'way': Bits(CC.way_addr_width),
+            'meta': Bits(CC.num_ways * CC.tag_width)
         }),
         'write': Input({
             'valid': Bits(1),
-            'set': Bits(set_addr_width),
-            'way': Bits(way_addr_width),
-            'meta': Bits(num_ways * tag_width)
+            'set': Bits(CC.set_addr_width),
+            'way': Bits(CC.way_addr_width),
+            'meta': Bits(CC.num_ways * CC.tag_width)
         })
     })
 
-    meta_array = Mem(tag_width * num_ways, num_sets)
+    meta_array = Mem(CC.tag_width * CC.num_ways, CC.num_sets)
 
-    read_data = Wire(Bits(num_ways * tag_width))
-    evict_way = Wire(Bits(way_addr_width))
+    read_data = Wire(Bits(CC.num_ways * CC.tag_width))
+    evict_way = Wire(Bits(CC.way_addr_width))
 
     valid_bits = Reg([
-        [Bits(1) for _ in range(num_sets)]
-        for _ in range(num_ways)],
+        [Bits(1) for _ in range(CC.num_sets)]
+        for _ in range(CC.num_ways)],
         reset_value=[
-        [0 for _ in range(num_sets)]
-        for _ in range(num_ways)])
+        [0 for _ in range(CC.num_sets)]
+        for _ in range(CC.num_ways)])
 
-    read_data <<= meta_array.Read(Set(io.query_req))
+    read_data <<= meta_array.Read(CC.AddrSet(io.read.addr))
 
-    read_tags = [(way, GetTag(read_data, way)) for way in range(num_ways)]
+    read_tags = [
+        (way, CC.MetaTag(read_data, way)) for way in range(CC.num_ways)
+    ]
 
     io.query_resp.hit <<= False
 
@@ -107,53 +125,37 @@ def CacheMetaArray():
     io.query_resp.way <<= evict_way
 
     for (way, read_tag) in read_tags:
-        valid = valid_bits[way][Set(io.query_req)]
-        with (read_tag == Tag(io.read.set)) & valid:
+        valid = valid_bits[way][CC.AddrSet(io.read.addr)]
+        with (read_tag == CC.AddrTag(io.read.addr)) & valid:
             io.query_resp.hit <<= True
             io.query_resp.way <<= way
-
-    #
-    # Update Logic
-    #
-
-    new_meta = Wire([Bits(tag_width) for _ in range(num_ways)])
-
-    for way in range(num_ways):
-        with io.update.way == way:
-            new_meta[way] <<= Tag(io.imem.read_resp.data)
-        with otherwise:
-            new_meta[way] <<= GetData(io.update.oldmeta, way)
-
-    write_meta = Cat(reversed(new_meta[way] for way in range(num_ways)))
-
-    data_array.Write(io.update.set, write_meta, io.update.valid)
 
     NameSignals(locals())
 
 @Module
-def DCacheDataArray():
+def CacheDataArray(CC : CacheConfig):
     io = Io({
-        'read_req': Input({
-            'set': Bits(set_addr_width),
-            'way': Bits(way_addr_width)
+        'read': Input({
+            'set': Bits(CC.set_addr_width),
+            'way': Bits(CC.way_addr_width)
         }),
-        'read_resp': Output(Bits(line_width)),
+        'resp': Output(Bits(CC.line_width)),
         'update': Input({
             'valid': Bits(1),
-            'set': Bits(set_addr_width),
-            'way': Bits(way_addr_width),
-            'data': Bits(line_width)
+            'set': Bits(CC.set_addr_width),
+            'way': Bits(CC.way_addr_width),
+            'data': Bits(CC.line_width)
         })
     })
 
-    data_array = Mem(num_ways * line_width, num_sets)
+    data_array = Mem(CC.num_ways * CC.line_width, CC.num_sets)
 
     #
     # Read Logic
     #
 
-    read_result = Wire(Bits(num_ways * line_width))
-    read_lines = Wire([Bits(line_width) for _ in range(num_ways)])
+    read_result = Wire(Bits(CC.num_ways * CC.line_width))
+    read_lines = Wire([Bits(CC.line_width) for _ in range(CC.num_ways)])
     read_result <<= data_array.ReadComb(io.read_req.set)
 
     for way in range(num_ways):
@@ -161,32 +163,32 @@ def DCacheDataArray():
 
     io.read_resp <<= read_lines[io.read_req.way]
 
-    #
-    # Update Logic
-    #
+    NameSignals(locals())
 
-    new_data = Wire([Bits(line_width) for _ in range(num_ways)])
-    update_data = data_array.ReadComb(io.update.set)
+def UpdateArray(CC, old_data, new_element, update_way, elem_width):
+    new_data = Wire([Bits(elem_width) for _ in range(num_ways)])
+
+    Element = lambda way: old_data(elem_width * (way + 1) - 1, elem_width * way)
 
     for way in range(num_ways):
-        with io.update.way == way:
-            new_data[way] <<= Tag(io.imem.read_resp.data)
+        with update_way == way:
+            new_data[way] <<= new_element
         with otherwise:
-            new_data[way] <<= GetData(data, way)
+            new_data[way] <<= Element(way)
 
     write_data = Cat(reversed(new_data[way] for way in range(num_ways)))
 
-    data_array.Write(io.update.set, write_data, io.update.valid)
-
     NameSignals(locals())
-
+    return new_data
 
 @Module
-def Aligner():
+def Aligner(CC : CacheConfig):
+    output_width = 32 if CC.cache_type == 'icache' else C['core-width']
+
     io = Io({
-        'cpu_req': Input(cpu_dcache_req),
-        'line': Input(Bits(line_width)),
-        'result': Output(Bits(core_width))
+        'rtype': Input(rtype.bitwidth),
+        'line': Input(Bits(CC.line_width)),
+        'result': Output(Bits(output_width))
     })
 
     io.result <<= 0
@@ -194,50 +196,91 @@ def Aligner():
     NameSignals(locals())
 
 @Module
-def DCache():
+def Cache(cache_type='dcache'):
     io = Io({
-        'ready': Output(Bits(1)),
         'cpu_req': Input(cpu_dcache_req),
+        'cpu_resp': Output(cpu_dcache_resp),
         'stall': Output(Bits(1)),
-        'cpu_resp': Output(cpu_dcache_resp)
+        'mem': Output({
+            'read': mem_read_request,
+            'resp': mem_read_response,
+            'write': mem_write_request
+        })
     })
 
-    meta_array = Instance(DCacheMetaArray())
-    data_array = Instance(DCacheDataArray())
-    aligner = Instance(Aligner())
+    meta_array = Instance(CacheMetaArray(cache_type))
+    data_array = Instance(CacheDataArray(cache_type))
+    aligner = Instance(Aligner(cache_type))
 
-    s1_req = Wire(cpu_dcache_req)
-    s2_req = Reg(cpu_dcache_req, reset_value=cpu_dcache_req_reset)
+    stall = Wire(Bits(1))
 
-    miss_active = Reg(Bits(1), reset_value=False)
-    miss_req_sent = Reg(Bits(1), reset_value=False)
-    miss_evict_sent = Reg(Bits(1), reset_value=False)
+    s0_req = Wire(cpu_dcache_req)
+    s1_req = Reg(cpu_dcache_req, reset_value=cpu_dcache_req_reset)
+
+    captured_meta = Reg(Bits(CC.tag_width * CC.num_ways), reset_value=0)
+    mstates = Enum(['idle', 'read', 'evict', 'update'])
+    miss_state = Reg(Bits(mstates.bitwidth), reset_value=mstates.idle)
+
+    io.stall <<= stall
+
+    with ~stall:
+        s1_req <<= s0_req
+        s2_req <<= s1_req
 
     #
-    # Stage 1: Metadata read
+    # Stage 0: Metadata read
     #
 
-    s1_req <<= io.cpu_req
+    s0_req <<= io.cpu_req
     io.ready <<= True
 
     meta_array.query_req <<= s1_req.addr
 
     #
-    # Stage 2: Data read
+    # Stage 1: Handle Request
     #
-
-    with s1_req.valid:
-        s2_req <<= s1_req
 
     data_array.read_req.set <<= Set(s2_req.addr)
     data_array.read_req.way <<= meta_array.query_resp.way
 
     #
-    # Miss Handling
+    # Stage 2: Select and align data
     #
 
-    miss_active <<= ~meta_array.quer_resp.hit
-    io.cpu_resp.miss <<= miss_active | ~meta_array.quer_resp.hit
+    aligner.rtype <<=
+
+
+
+    #
+    # Miss Handling
+    #
+    # Note: this is done via state machine and this cache will output a stall
+    # signal until the miss has been serviced and the pipeline can resume as if
+    # nothing ever happened.
+    #
+
+    miss_read_sent = Reg(Bits(1), reset_value=False)
+    miss_evict_sent = Reg(Bits(1), reset_value=False)
+
+    io.mem.read.valid <<= False
+
+    with miss_state == mstates.idle:
+        with ~meta_array.quer_resp.hit & s2_req.valid:
+            miss_state <<= mstates.read
+
+    with miss_state == mstates.read_evict:
+        io.mem.read.valid <<= ~miss_read_sent
+        io.mem.read.addr <<=
+        with io.mem.read.ready:
+
+
+
+    with miss_state == mstates.update:
+
+
+
+    stall <<= (miss_state != mstates.idle) | ~meta_array.quer_resp.hit
+
 
     #
     # Handle sending the memory request for a miss. This can wait an arbitrary

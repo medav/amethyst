@@ -23,7 +23,7 @@ def IFetchStage():
         'if_id': Output(if_id_bundle),
         'inst': Output(Bits(32)),
         'icache': Output({
-            'cpu_req': Bits(paddr_width),
+            'cpu_req': Bits(C['paddr-width']),
             'cpu_resp': Flip({
                 'miss': Bits(1),
                 'data': Bits(32)
@@ -31,13 +31,13 @@ def IFetchStage():
         }),
         'misspec': Input({
             'valid': Bits(1),
-            'pc': Bits(paddr_width),
-            'target': Bits(paddr_width),
+            'pc': Bits(C['paddr-width']),
+            'target': Bits(C['paddr-width']),
             'taken': Bits(1),
             'is_return': Bits(1)
         }),
         'branch': Input(Bits(1)),
-        'branch_target': Input(Bits(paddr_width))
+        'branch_target': Input(Bits(C['paddr-width']))
     })
 
     bpred = Instance(BranchPredictor())
@@ -57,9 +57,9 @@ def IFetchStage():
     # next to be executed.
     #
 
-    pc = Reg(Bits(paddr_width), reset_value=C['reset-addr'])
-    pred_pc = Wire(Bits(paddr_width))
-    next_pc = Wire(Bits(paddr_width))
+    pc = Reg(Bits(C['paddr-width']), reset_value=C['reset-addr'])
+    pred_pc = Wire(Bits(C['paddr-width']))
+    next_pc = Wire(Bits(C['paddr-width']))
 
     with ~icache.cpu_resp.miss:
         pc <<= next_pc
