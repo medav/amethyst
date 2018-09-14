@@ -41,6 +41,8 @@ access_rtype = Enum(['read', 'write'])
 Tag = lambda addr: addr(paddr_width - 1, untag_width)
 Set = lambda addr: addr(untag_width - 1, line_index_width)
 Index = lambda addr: addr(line_index_width - 1, 0)
+GetTag = lambda meta, way: meta(tag_width * (way + 1) - 1, tag_width * way)
+GetData = lambda data, way: data(line_width * (way + 1) - 1, line_width * way)
 
 cpu_dcache_req = {
     'valid': Bits(1),
@@ -62,21 +64,27 @@ cpu_dcache_resp = {
 }
 
 @Module
-def DCacheMetaArray():
+def CacheMetaArray():
     io = Io({
-        'query_req': Input(Bits(paddr_width)),
-        'query_resp': Output({
+        'read': Input({
+            'set': Bits(set_addr_Width)
+        }),
+        'resp': Output({
             'hit': Bits(1),
             'way': Bits(way_addr_width)
         }),
-        'update': Input({
+        'write': Input({
             'valid': Bits(1),
             'set': Bits(set_addr_width),
-            'tag': Bits(tag_width)
+            'way': Bits(way_addr_width),
+            'meta': Bits(num_ways * tag_width)
         })
     })
 
-    meta_read_data = Wire(Bits(num_ways * tag_width))
+    meta_array = Mem(tag_width * num_ways, num_sets)
+
+    read_data = Wire(Bits(num_ways * tag_width))
+    evict_way = Wire(Bits(way_addr_width))
 
     valid_bits = Reg([
         [Bits(1) for _ in range(num_sets)]
@@ -85,25 +93,40 @@ def DCacheMetaArray():
         [0 for _ in range(num_sets)]
         for _ in range(num_ways)])
 
-    meta_array = Mem(
-        tag_width * num_ways,
-        num_sets)
+    read_data <<= meta_array.Read(Set(io.query_req))
 
-    meta_read_data <<= meta_array.Read(Set(io.query_req))
-
-    read_tags = [
-        (i, meta_read_data((i + 1) * tag_width - 1, i * tag_width))
-        for i in range(num_ways)
-    ]
+    read_tags = [(way, GetTag(read_data, way)) for way in range(num_ways)]
 
     io.query_resp.hit <<= False
-    io.query_resp.way <<= 0
+
+    #
+    # When there is not a hit in the cache, the way that is reported here will
+    # be used for eviction purposes.
+    #
+
+    io.query_resp.way <<= evict_way
 
     for (way, read_tag) in read_tags:
         valid = valid_bits[way][Set(io.query_req)]
-        with (read_tag == Tag(io.query_req)) & valid:
+        with (read_tag == Tag(io.read.set)) & valid:
             io.query_resp.hit <<= True
             io.query_resp.way <<= way
+
+    #
+    # Update Logic
+    #
+
+    new_meta = Wire([Bits(tag_width) for _ in range(num_ways)])
+
+    for way in range(num_ways):
+        with io.update.way == way:
+            new_meta[way] <<= Tag(io.imem.read_resp.data)
+        with otherwise:
+            new_meta[way] <<= GetData(io.update.oldmeta, way)
+
+    write_meta = Cat(reversed(new_meta[way] for way in range(num_ways)))
+
+    data_array.Write(io.update.set, write_meta, io.update.valid)
 
     NameSignals(locals())
 
@@ -114,18 +137,47 @@ def DCacheDataArray():
             'set': Bits(set_addr_width),
             'way': Bits(way_addr_width)
         }),
-        'read_resp': Output(Bits(line_width))
+        'read_resp': Output(Bits(line_width)),
+        'update': Input({
+            'valid': Bits(1),
+            'set': Bits(set_addr_width),
+            'way': Bits(way_addr_width),
+            'data': Bits(line_width)
+        })
     })
+
+    data_array = Mem(num_ways * line_width, num_sets)
+
+    #
+    # Read Logic
+    #
 
     read_result = Wire(Bits(num_ways * line_width))
     read_lines = Wire([Bits(line_width) for _ in range(num_ways)])
-    data_array = Mem(num_ways * line_width, num_sets)
-    read_result <<= data_array.Read(io.read_req.set)
+    read_result <<= data_array.ReadComb(io.read_req.set)
 
-    for i in range(num_ways):
-        read_lines[i] <<= read_result(line_width * (i + 1) - 1, line_width * i)
+    for way in range(num_ways):
+        read_lines[way] <<= GetData(read_result, way)
 
-    io.read_resp <<= Mux(read_lines, io.read_req.way)
+    io.read_resp <<= read_lines[io.read_req.way]
+
+    #
+    # Update Logic
+    #
+
+    new_data = Wire([Bits(line_width) for _ in range(num_ways)])
+    update_data = data_array.ReadComb(io.update.set)
+
+    for way in range(num_ways):
+        with io.update.way == way:
+            new_data[way] <<= Tag(io.imem.read_resp.data)
+        with otherwise:
+            new_data[way] <<= GetData(data, way)
+
+    write_data = Cat(reversed(new_data[way] for way in range(num_ways)))
+
+    data_array.Write(io.update.set, write_data, io.update.valid)
+
     NameSignals(locals())
 
 
@@ -228,7 +280,7 @@ def DCache():
     # replaced with the tag of the current request.
     #
 
-    new_data = Wire([Bits(line_width) for _ in range(num_ways)])
+
     new_tags = Wire([Bits(tag_width) for _ in range(num_ways)])
 
     for way in range(num_ways):
