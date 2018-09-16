@@ -148,7 +148,10 @@ def CacheDataArray(CC : CacheConfig):
         })
     })
 
-    data_array = Mem(CC.num_ways * CC.line_width, CC.num_sets)
+    data_arrays = [
+        Mem(CC.line_width, CC.num_sets)
+        for _ in range(CC.num_ways)
+    ]
 
     #
     # Read Logic
@@ -156,16 +159,29 @@ def CacheDataArray(CC : CacheConfig):
 
     read_result = Wire(Bits(CC.num_ways * CC.line_width))
     read_lines = Wire([Bits(CC.line_width) for _ in range(CC.num_ways)])
-    read_result <<= data_array.ReadComb(io.read_req.set)
+    read_data = [
+        data_arrays[way].Read(io.read.set)
+        for way in range(CC.num_ways)
+    ]
 
     for way in range(num_ways):
-        read_lines[way] <<= GetData(read_result, way)
+        read_lines[way] <<= read_data[way]
 
     io.read_resp <<= read_lines[io.read_req.way]
 
+    #
+    # Update Logic
+    #
+
+    write_array = Wire([Bits(1) for _ in range(CC.num_ways)])
+
+    for way in range(num_ways):
+        write_array[way] <<= io.update.valid & (io.update.way == way)
+        data_arrays[way].Write(io.update.set, io.update.data, write_array[way])
+
     NameSignals(locals())
 
-def UpdateArray(CC, old_data, new_element, update_way, elem_width):
+def UpdateMetaArray(CC, old_data, new_element, update_way, elem_width):
     new_data = Wire([Bits(elem_width) for _ in range(num_ways)])
 
     Element = lambda way: old_data(elem_width * (way + 1) - 1, elem_width * way)
@@ -234,14 +250,14 @@ def Cache(cache_type='dcache'):
     s0_req <<= io.cpu_req
     io.ready <<= True
 
-    meta_array.query_req <<= s1_req.addr
+    meta_array.read <<= s1_req.addr
 
     #
     # Stage 1: Handle Request
     #
 
-    data_array.read_req.set <<= Set(s2_req.addr)
-    data_array.read_req.way <<= meta_array.query_resp.way
+    data_array.read.set <<= Set(s2_req.addr)
+    data_array.read.way <<= meta_array.query_resp.way
 
     #
     # Stage 2: Select and align data
