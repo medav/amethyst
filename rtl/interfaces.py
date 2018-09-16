@@ -6,8 +6,7 @@ from config import *
 # Memory signals
 #
 
-access_size = Enum(['byte', 'half', 'word', 'dword'])
-access_rtype = Enum(['read', 'write'])
+access_rtype = Enum(['b', 'h', 'w', 'd', 'bu', 'hu', 'wu'])
 
 mem_read_request = {
     'valid': Bits(1),
@@ -37,16 +36,16 @@ mem_bundle = {
 
 cpu_cache_req = {
     'valid': Bits(1),
-    'size': Bits(access_size.bitwidth),
     'addr': Bits(C['paddr-width']),
-    'rtype': Bits(access_rtype.bitwidth)
+    'rtype': Bits(access_rtype.bitwidth),
+    'read': Bits(1),
 }
 
 cpu_cache_req_reset = {
     'valid': False,
-    'size': 0,
     'addr': 0,
-    'rtype': 0
+    'rtype': 0,
+    'read': False
 }
 
 cpu_cache_resp = {

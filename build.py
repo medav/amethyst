@@ -14,7 +14,7 @@ circuit = Circuit('amethyst', True, True)
 print('Elaborating...')
 with Context(circuit):
     # circuit.top = amethyst.Amethyst()
-    circuit.top = cache.Cache(cache.CacheConfig.FromCacheType('icache'))
+    circuit.top = cache.Cache(cache.CacheConfig.FromCacheType('dcache'))
 
 print('Synthesizing...')
 EmitCircuit(circuit, 'build/amethyst.v')
