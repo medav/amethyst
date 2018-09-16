@@ -6,6 +6,9 @@ from config import *
 # Memory signals
 #
 
+access_size = Enum(['byte', 'half', 'word', 'dword'])
+access_rtype = Enum(['read', 'write'])
+
 mem_read_request = {
     'valid': Bits(1),
     'ready': Flip(Bits(1)),

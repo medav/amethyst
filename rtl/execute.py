@@ -3,42 +3,11 @@ from dataclasses import dataclass
 from atlas import *
 from interfaces import *
 from instructions import *
+from ops import *
 
 import forward
 
 from config import *
-
-class BitOrReduceOperator(Operator):
-    """Operator that reduces a bits signal via logic OR."""
-
-    #
-    # N.B. This is a good example of how extendable Atlas/Python is. It enables
-    # user code to create new synthesizable operations that generate custom
-    # Verilog code.
-    #
-    # Since Atlas doesn't currently have a good way of producing an OR reduction
-    # tree, we can just make our own, here!
-    #
-
-    def __init__(self, bits):
-        super().__init__('bitsum')
-        self.bit_vec = [FilterFrontend(bits(i, i)) for i in range(bits.width)]
-        self.result = CreateSignal(
-            Bits(1),
-            name='result',
-            parent=self,
-            frontend=False)
-
-    def Declare(self):
-        VDeclWire(self.result)
-
-    def Synthesize(self):
-        add_str = ' | '.join([VName(bit) for bit in self.bit_vec])
-        VAssignRaw(VName(self.result), add_str)
-
-@OpGen(default='result')
-def BitOrReduce(bits):
-    return BitOrReduceOperator(bits)
 
 @Module
 def ArithmeticLogicUnit():

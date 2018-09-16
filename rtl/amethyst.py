@@ -2,8 +2,7 @@ from atlas import *
 
 from interfaces import *
 
-import icache
-import dcache
+import cache
 
 import ifetch
 import idecode
@@ -31,10 +30,10 @@ def Amethyst():
     # Instruction and Data Caches
     #
 
-    icache = Instance(icache.ICache())
+    icache = Instance(cache.Cache(cache.CacheConfig.FromCacheType('icache')))
     io.imem <<= icache.imem
 
-    dcache = Instance(dcache.DCache())
+    dcache = Instance(cache.Cache(cache.CacheConfig.FromCacheType('dcache')))
     io.dmem <<= dcache.dmem
 
     #
@@ -106,7 +105,7 @@ def Amethyst():
     execute_stage.id_ex <<= id_ex_reg
     ex_mem_reg <<= execute_stage.ex_mem
 
-    dcache.cpu_req.valid <<=
+    # dcache.cpu_req.valid <<=
 
     execute_stage.fwd1_select <<= fwd.fwd1_select
     execute_stage.fwd2_select <<= fwd.fwd2_select

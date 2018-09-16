@@ -3,7 +3,6 @@ from interfaces import *
 
 from config import *
 
-from icache import ICache
 from bpred import BranchPredictor
 from btb import BranchTargetBuffer
 from ras import ReturnAddressStack

@@ -19,7 +19,7 @@ Rs2 = lambda inst: inst(24, 20)
 Funct3 = lambda inst: inst(14, 12)
 Funct7 = lambda inst: inst(31, 25)
 
-def SetControlSignals(inst_spec, itype, ctrl.ex, ctrl.mem, ctrl.wb):
+def SetControlSignals(inst_spec, itype, ctrl):
     """Update given control signals based on inst_spec."""
 
     itype <<= inst_spec.itype
