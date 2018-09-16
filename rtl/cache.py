@@ -352,7 +352,7 @@ def Cache(CC : CacheConfig):
     evict_data = Reg(Bits(CC.line_width), reset_value=0)
 
     stall <<= (miss_state != mstates.idle) | \
-        (~meta_array.resp.hit & s1_req.valid)
+        (~meta_array.resp.hit & s1_req.valid & s1_req.read)
 
     #
     # Defaults
@@ -379,7 +379,7 @@ def Cache(CC : CacheConfig):
     data_array.update.valid <<= False
 
     with miss_state == mstates.idle:
-        with ~meta_array.resp.hit & s1_req.valid:
+        with ~meta_array.resp.hit & s1_req.valid & s1_req.read:
             evict_way <<= meta_array.resp.way
             evict_data <<= s1_read_data
 

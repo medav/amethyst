@@ -22,11 +22,8 @@ def IFetchStage():
         'if_id': Output(if_id_bundle),
         'inst': Output(Bits(32)),
         'icache': Output({
-            'cpu_req': Bits(C['paddr-width']),
-            'cpu_resp': Flip({
-                'miss': Bits(1),
-                'data': Bits(32)
-            })
+            'cpu_req': Bits(cpu_cache_request),
+            'cpu_resp': Flip(cpu_cache_response)
         }),
         'misspec': Input({
             'valid': Bits(1),
@@ -44,12 +41,6 @@ def IFetchStage():
     ras = Instance(ReturnAddressStack())
 
     ras.pop.valid <<= False
-
-    #
-    # Hook up the icache to the imem ports
-    #
-
-    io.imem <<= icache.imem
 
     #
     # This is the program counter for Geode. It decides what instruction is
