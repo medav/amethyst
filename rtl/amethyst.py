@@ -15,15 +15,8 @@ import hazard
 @Module
 def Amethyst():
     io = Io({
-        'imem': Output({
-            'read_req': mem_read_request,
-            'read_resp': mem_read_response
-        }),
-        'dmem': Output({
-            'read_req': mem_read_request,
-            'read_resp': mem_read_response,
-            'write_req': mem_write_request
-        })
+        'imem': Output(mem_bundle),
+        'dmem': Output(mem_bundle)
     })
 
     #

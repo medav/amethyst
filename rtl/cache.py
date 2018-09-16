@@ -88,7 +88,7 @@ def CacheMetaArray(CC : CacheConfig):
             'valid': Bits(1),
             'set': Bits(CC.set_addr_width),
             'way': Bits(CC.way_addr_width),
-            'meta': Bits(CC.num_ways * CC.tag_width)
+            'tag': Bits(CC.tag_width)
         })
     })
 
@@ -153,7 +153,7 @@ def CacheMetaArray(CC : CacheConfig):
 
         meta_arrays[way].Write(
             io.update.set,
-            io.update.meta,
+            io.update.tag,
             io.update.valid & (io.update.way == way))
 
     NameSignals(locals())
@@ -162,10 +162,9 @@ def CacheMetaArray(CC : CacheConfig):
 def CacheDataArray(CC : CacheConfig):
     io = Io({
         'read': Input({
-            'set': Bits(CC.set_addr_width),
-            'way': Bits(CC.way_addr_width)
+            'set': Bits(CC.set_addr_width)
         }),
-        'resp': Output(Bits(CC.line_width)),
+        'resp': Output([Bits(CC.line_width) for _ in range(CC.num_ways)]),
         'update': Input({
             'valid': Bits(1),
             'set': Bits(CC.set_addr_width),
@@ -183,16 +182,13 @@ def CacheDataArray(CC : CacheConfig):
     # Read Logic
     #
 
-    read_lines = Wire([Bits(CC.line_width) for _ in range(CC.num_ways)])
     read_data = [
         data_arrays[way].Read(io.read.set)
         for way in range(CC.num_ways)
     ]
 
     for way in range(CC.num_ways):
-        read_lines[way] <<= read_data[way]
-
-    io.resp <<= read_lines[io.read.way]
+        io.resp[way] <<= read_data[way]
 
     #
     # Update Logic
@@ -229,14 +225,10 @@ def Aligner(CC : CacheConfig):
 @Module
 def Cache(CC : CacheConfig):
     io = Io({
-        'cpu_req': Input(cpu_dcache_req),
-        'cpu_resp': Output(cpu_dcache_resp),
+        'cpu_req': Input(cpu_cache_req),
+        'cpu_resp': Output(cpu_cache_resp),
         'stall': Output(Bits(1)),
-        'mem': Output({
-            'read': mem_read_request,
-            'resp': mem_read_response,
-            'write': mem_write_request
-        })
+        'mem': Output(mem_bundle)
     })
 
     meta_array = Instance(CacheMetaArray(CC))
@@ -245,11 +237,14 @@ def Cache(CC : CacheConfig):
 
     stall = Wire(Bits(1))
 
-    s0_req = Wire(cpu_dcache_req)
-    s1_req = Reg(cpu_dcache_req, reset_value=cpu_dcache_req_reset)
-    s2_req = Reg(cpu_dcache_req, reset_value=cpu_dcache_req_reset)
+    s0_req = Wire(cpu_cache_req)
 
-    captured_meta = Reg(Bits(CC.tag_width * CC.num_ways), reset_value=0)
+    s1_req = Reg(cpu_cache_req, reset_value=cpu_cache_req_reset)
+    s1_read_data = Wire(Bits(CC.line_width))
+
+    s2_req = Reg(cpu_cache_req, reset_value=cpu_cache_req_reset)
+    s2_resp_data = Reg(Bits(C['core-width']), reset_value=0)
+
     mstates = Enum(['idle', 'read', 'evict', 'update'])
     miss_state = Reg(Bits(mstates.bitwidth), reset_value=mstates.idle)
 
@@ -259,28 +254,31 @@ def Cache(CC : CacheConfig):
         s1_req <<= s0_req
         s2_req <<= s1_req
 
+        s2_resp_data <<= aligner.result
+
     #
     # Stage 0: Metadata read
     #
 
     s0_req <<= io.cpu_req
 
-    meta_array.read.addr <<= s1_req.addr
+    meta_array.read.addr <<= s0_req.addr
+    data_array.read.set <<= CC.Set(s0_req.addr)
 
     #
     # Stage 1: Handle Request
     #
 
-    data_array.read.set <<= CC.Set(s2_req.addr)
-    data_array.read.way <<= meta_array.resp.way
+    # N.B. This is the "way mux"
+    s1_read_data <<= data_array.resp[meta_array.resp.way]
+    aligner.line <<= s1_read_data
+    aligner.rtype <<= s1_req.rtype
 
     #
     # Stage 2: Select and align data
     #
 
-    # aligner.rtype <<=
-
-
+    io.cpu_resp.data <<= s2_resp_data
 
     #
     # Miss Handling
@@ -290,29 +288,98 @@ def Cache(CC : CacheConfig):
     # nothing ever happened.
     #
 
-    miss_read_sent = Reg(Bits(1), reset_value=False)
-    miss_evict_sent = Reg(Bits(1), reset_value=False)
+    evict_way = Reg(Bits(CC.way_addr_width), reset_value=0)
+    evict_data = Reg(Bits(CC.line_width), reset_value=0)
+
+    stall <<= (miss_state != mstates.idle) | \
+        (~meta_array.resp.hit & s1_req.valid)
+
+    #
+    # Defaults
+    #
 
     io.mem.read.valid <<= False
+    io.mem.read.addr <<= 0
+
+    io.mem.write.valid <<= False
+    io.mem.write.addr <<= 0
+    io.mem.write.data <<= 0
+
+    io.mem.resp.ready <<= False
+
+    meta_array.update.way <<= evict_way
+    meta_array.update.set <<= CC.Set(io.mem.resp.addr)
+    meta_array.update.tag <<= CC.Tag(io.mem.resp.addr)
+
+    data_array.update.way <<= evict_way
+    data_array.update.set <<= CC.Set(io.mem.resp.addr)
+    data_array.update.data <<= io.mem.resp.data
+
+    meta_array.update.valid <<= False
+    data_array.update.valid <<= False
 
     with miss_state == mstates.idle:
-        with ~meta_array.resp.hit & s2_req.valid:
+        with ~meta_array.resp.hit & s1_req.valid:
+            evict_way <<= meta_array.resp.way
+            evict_data <<= s1_read_data
+
+            #
+            # Here we are about to take a miss. For the dcache, if the reported
+            # way to evict is valid (in meta data), then the data needs to be
+            # written to memory before new data can be pulled into the cache.
+            # In that case, move to the evict state. If this is an icache or the
+            # way does not contain valid data, go immediately to the read state.
+            #
+
+            if CC.cache_type == 'dcache':
+                with meta_array.resp.valid:
+                    miss_state <<= mstates.evict
+                with otherwise:
+                    miss_state <<= mstates.read
+            else:
+                miss_state <<= mstates.read
+
+    with miss_state == mstates.evict:
+
+        #
+        # Here wait for the memory to be ready for a write. Send the evict data
+        # to the memory and move to the read state.
+        #
+
+        io.mem.write.valid <<= True
+        io.mem.write.addr <<= s1_req.addr
+        io.mem.write.data <<= evict_data
+
+        with io.mem.write.ready:
             miss_state <<= mstates.read
 
     with miss_state == mstates.read:
-        io.mem.read.valid <<= ~miss_read_sent
-        # io.mem.read.addr <<=
-        # with io.mem.read.ready:
 
-    with miss_state == mstates.evict:
-        pass
+        #
+        # Here send the request to the memory the missed line of data.
+        #
+
+        io.mem.read.valid <<= True
+        io.mem.read.addr <<= s1_req.addr
+
+        with io.mem.read.ready:
+            miss_state <<= mstates.update
 
     with miss_state == mstates.update:
-        pass
 
+        #
+        # Here wait for the read request to be fulfilled. When it is, the meta
+        # and data arrays are ready to be updated. When the data is ready, the
+        # stall signal can be pulled low.
+        #
 
+        io.mem.resp.ready <<= True
+        aligner.line <<= io.mem.resp.data
 
-    stall <<= (miss_state != mstates.idle) | ~meta_array.resp.hit
+        with io.mem.resp.valid:
+            stall <<= False
+            meta_array.update.valid <<= True
+            data_array.update.valid <<= True
 
     NameSignals(locals())
 

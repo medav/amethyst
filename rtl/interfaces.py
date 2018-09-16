@@ -29,21 +29,27 @@ mem_write_request = {
     'data': Bits(C['mem-width'])
 }
 
-cpu_dcache_req = {
+mem_bundle = {
+    'read': mem_read_request,
+    'resp': mem_read_response,
+    'write': mem_write_request
+}
+
+cpu_cache_req = {
     'valid': Bits(1),
     'size': Bits(access_size.bitwidth),
     'addr': Bits(C['paddr-width']),
     'rtype': Bits(access_rtype.bitwidth)
 }
 
-cpu_dcache_req_reset = {
+cpu_cache_req_reset = {
     'valid': False,
     'size': 0,
     'addr': 0,
     'rtype': 0
 }
 
-cpu_dcache_resp = {
+cpu_cache_resp = {
     'data': Bits(C['core-width'])
 }
 
