@@ -285,7 +285,8 @@ def Cache(CC : CacheConfig):
     io = Io({
         'cpu_req': Input(cpu_cache_req),
         'cpu_resp': Output(cpu_cache_resp),
-        'stall': Output(Bits(1)),
+        'cpu_stall': Input(Bits(1)),
+        'miss_stall': Output(Bits(1)),
         'mem': Output(mem_bundle)
     })
 
@@ -306,12 +307,11 @@ def Cache(CC : CacheConfig):
     mstates = Enum(['idle', 'read', 'evict', 'update'])
     miss_state = Reg(Bits(mstates.bitwidth), reset_value=mstates.idle)
 
-    io.stall <<= stall
+    io.miss_stall <<= stall
 
-    with ~stall:
+    with ~stall & ~io.cpu_stall:
         s1_req <<= s0_req
         s2_req <<= s1_req
-
         s2_resp_data <<= aligner.result
 
     #

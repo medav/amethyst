@@ -111,11 +111,13 @@ mem_ctrl_bundle_reset = {
 }
 
 writeback_ctrl_bundle = {
-    'mem_to_reg': Bits(1)
+    'mem_to_reg': Bits(1),
+    'write_reg': Bits(1)
 }
 
 writeback_ctrl_bundle_reset = {
-    'mem_to_reg': False
+    'mem_to_reg': False,
+    'write_reg': False
 }
 
 ctrl_bundle = {

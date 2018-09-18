@@ -140,10 +140,15 @@ def ExecuteStage():
 
     io = Io({
         'id_ex': Input(id_ex_bundle),
-        'fwd1_select': Input(Bits(forward.fwd.bitwidth)),
-        'fwd2_select': Input(Bits(forward.fwd.bitwidth)),
-        'fwd_mem_data': Input(Bits(C['core-width'])),
-        'fwd_wb_data': Input(Bits(C['core-width'])),
+        'fwd': Input({
+            'select1': Bits(forward.fwd.bitwidth),
+            'select2': Bits(forward.fwd.bitwidth),
+            'mem_data': Bits(C['core-width']),
+            'wb_data': Bits(C['core-width'])
+        }),
+        'dcache': Output({
+            'cpu_req': cpu_cache_req
+        }),
         'ex_mem': Output(ex_mem_bundle)
     })
 
@@ -155,7 +160,7 @@ def ExecuteStage():
     # Branch Target Generation
     #
 
-    io.ex_mem.branch_target <<= io.id_ex.inst_data.pc + io.id_ex.imm
+    io.ex_mem.branch_target <<= io.id_ex.ctrl.inst.pc + io.id_ex.imm
 
     #
     # Forwarding Logic
@@ -166,19 +171,19 @@ def ExecuteStage():
 
     rs1_fwd <<= io.id_ex.rs1_data
 
-    with io.fwd1_select == forward.fwd.mem:
-        rs1_fwd <<= io.fwd_mem_data
+    with io.fwd.select1 == forward.fwd.mem:
+        rs1_fwd <<= io.fwd.mem_data
 
-    with io.fwd1_select == forward.fwd.wb:
-        rs1_fwd <<= io.fwd_wb_data
+    with io.fwd.select1 == forward.fwd.wb:
+        rs1_fwd <<= io.fwd.wb_data
 
     rs2_fwd <<= io.id_ex.rs1_data
 
-    with io.fwd2_select == forward.fwd.mem:
-        rs2_fwd <<= io.fwd_mem_data
+    with io.fwd.select2 == forward.fwd.mem:
+        rs2_fwd <<= io.fwd.mem_data
 
-    with io.fwd2_select == forward.fwd.wb:
-        rs2_fwd <<= io.fwd_wb_data
+    with io.fwd.select2 == forward.fwd.wb:
+        rs2_fwd <<= io.fwd.wb_data
 
     #
     # ALU Source Selection
@@ -186,7 +191,7 @@ def ExecuteStage():
 
     alu.op0 <<= rs1_fwd
 
-    with io.id_ex.ex_ctrl.alu_src == AluSrc.RS2:
+    with io.id_ex.ctrl.ex.alu_src == AluSrc.RS2:
         alu.op1 <<= rs2_fwd
     with otherwise:
         alu.op1 <<= io.id_ex.imm
@@ -197,9 +202,9 @@ def ExecuteStage():
 
     AluControl(
         alu.alu_inst,
-        io.id_ex.ex_ctrl.alu_op,
-        io.id_ex.ex_ctrl.funct7,
-        io.id_ex.ex_ctrl.funct3)
+        io.id_ex.ctrl.ex.alu_op,
+        io.id_ex.ctrl.ex.funct7,
+        io.id_ex.ctrl.ex.funct3)
 
     #
     # Data Output Connections

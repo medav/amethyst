@@ -30,9 +30,9 @@ def SetControlSignals(inst_spec, itype, ctrl):
     # below).
     #
 
-    ctrl.ex <<= inst_spec.ctrl.ex.Literal()
-    ctrl.mem <<= inst_spec.ctrl.mem.Literal()
-    ctrl.wb <<= inst_spec.ctrl.wb.Literal()
+    ctrl.ex <<= inst_spec.ex_ctrl.Literal()
+    ctrl.mem <<= inst_spec.mem_ctrl.Literal()
+    ctrl.wb <<= inst_spec.wb_ctrl.Literal()
 
 def Control(inst, itype, ctrl):
     """Primary control logic for Geode."""
@@ -266,11 +266,11 @@ def IDecodeStage():
     # detection and data forwarding.
     #
 
-    io.id_ex.inst_data.inst <<= inst
-    io.id_ex.inst_data.pc <<= io.if_id.pc
-    io.id_ex.inst_data.rs1 <<= Rs1(inst)
-    io.id_ex.inst_data.rs2 <<= Rs2(inst)
-    io.id_ex.inst_data.rd <<= Rd(inst)
+    io.id_ex.ctrl.inst.inst <<= inst
+    io.id_ex.ctrl.inst.pc <<= io.if_id.pc
+    io.id_ex.ctrl.inst.rs1 <<= Rs1(inst)
+    io.id_ex.ctrl.inst.rs2 <<= Rs2(inst)
+    io.id_ex.ctrl.inst.rd <<= Rd(inst)
 
     #
     # Hook up the register read outputs.

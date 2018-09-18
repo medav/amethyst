@@ -22,8 +22,10 @@ def IFetchStage():
         'if_id': Output(if_id_bundle),
         'inst': Output(Bits(32)),
         'icache': Output({
-            'cpu_req': Bits(cpu_cache_request),
-            'cpu_resp': Flip(cpu_cache_response)
+            'cpu_req': cpu_cache_req,
+            'cpu_stall': Bits(1),
+            'miss_stall': Flip(Bits(1)),
+            'cpu_resp': Flip(cpu_cache_resp)
         }),
         'misspec': Input({
             'valid': Bits(1),
@@ -32,8 +34,7 @@ def IFetchStage():
             'taken': Bits(1),
             'is_return': Bits(1)
         }),
-        'branch': Input(Bits(1)),
-        'branch_target': Input(Bits(C['paddr-width']))
+        'hazard_stall': Input(Bits(1))
     })
 
     bpred = Instance(BranchPredictor())
@@ -42,21 +43,28 @@ def IFetchStage():
 
     ras.pop.valid <<= False
 
-    #
-    # This is the program counter for Geode. It decides what instruction is
-    # next to be executed.
-    #
-
     pc = Reg(Bits(C['paddr-width']), reset_value=C['reset-addr'])
+    pc_valid = Reg(Bits(1), reset_value=True)
     pred_pc = Wire(Bits(C['paddr-width']))
     next_pc = Wire(Bits(C['paddr-width']))
 
-    with ~icache.cpu_resp.miss:
-        pc <<= next_pc
+    s2_pc = Reg(Bits(C['paddr-width']), reset_value=0)
+    s2_valid = Reg(Bits(1), reset_value=False)
 
-    bpred.cur_pc <<= pc
-    btb.cur_pc <<= pc
-    icache.cpu_req <<= pc
+    s3_pc = Reg(Bits(C['paddr-width']), reset_value=0)
+    s3_valid = Reg(Bits(1), reset_value=False)
+
+    with ~io.icache.miss_stall & ~io.hazard_stall:
+        pc <<= next_pc
+        s2_pc <<= pc
+        s2_valid <<= pc_valid
+
+        s3_pc <<= pc
+        s3_valid <<= s2_valid
+
+    #
+    # Stage 1: Next PC prediction and selection
+    #
 
     #
     # The predicted next PC comes from either the next sequential PC or the
@@ -84,19 +92,29 @@ def IFetchStage():
             next_pc <<= pred_pc
 
     #
-    # It is assumed that the imem contains an internal latch that captures read
-    # data on the rising edge. This means the read data can't be included in the
-    # if_id register or it will be delayed by one cycle. Instead, the imem acts
-    # as part of the if_id register and bypasses it to the idecode stage.
-    #
-    # In addition to this, a valid flag is passed to the if_id register to tell
-    # the decode stage if the incoming instruction is valid. This is set to
-    # false when a branch is taken (because the next instruction to be read is
-    # to be discarded).
+    # Stage 2: Send icache request
     #
 
-    io.if_id.pc <<= pc
-    io.if_id.valid <<= ~io.branch & ~io.icache.cpu_resp.miss
+    io.icache.cpu_req.valid <<= True
+    io.icache.cpu_req.addr <<= pc
+    io.icache.cpu_req.rtype <<= access_rtype.w
+    io.icache.cpu_req.read <<= True
+    io.icache.cpu_stall <<= io.hazard_stall
+
+    #
+    # Stage 3: Wait for icache
+    #
+
+    # Nothing happens here since it's entirely in the cache.
+
+    #
+    # Stage 4: Emit instruction to decode stage
+    #
+    # N.B. This is overlapped with decode
+    #
+
+    io.if_id.pc <<= s3_pc
+    io.if_id.valid <<= s3_valid & ~io.icache.miss_stall
     io.if_id.inst <<= io.icache.cpu_resp.data
 
     NameSignals(locals())
