@@ -59,11 +59,12 @@ def Control(inst, itype, ctrl):
     ctrl.ex.funct3 <<= funct3
     ctrl.ex.funct7 <<= funct7
 
-    ctrl.mem.branch <<= 0
-    ctrl.mem.mem_write <<= 0
-    ctrl.mem.mem_read <<= 0
+    ctrl.mem.branch <<= False
+    ctrl.mem.mem_write <<= False
+    ctrl.mem.mem_read <<= False
 
-    ctrl.wb.mem_to_reg <<= 0
+    ctrl.wb.mem_to_reg <<= False
+    ctrl.wb.write_reg <<= False
 
     #
     # This part here really shows the power / advantage of Atlas's meta-
