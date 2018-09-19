@@ -162,7 +162,7 @@ def CacheMetaArray(CC : CacheConfig):
 def CacheDataArray(CC : CacheConfig):
     io = Io({
         'read': Input({
-            'set': Bits(CC.set_addr_width)
+            'addr': Bits(C['paddr-width'])
         }),
         'resp': Output([Bits(CC.line_width) for _ in range(CC.num_ways)]),
         'update': Input({
@@ -183,7 +183,7 @@ def CacheDataArray(CC : CacheConfig):
     #
 
     read_data = [
-        data_arrays[way].Read(io.read.set)
+        data_arrays[way].Read(CC.Set(io.read.addr))
         for way in range(CC.num_ways)
     ]
 
@@ -204,13 +204,11 @@ def CacheDataArray(CC : CacheConfig):
 
 @Module
 def Aligner(CC : CacheConfig):
-    output_width = 32 if CC.cache_type == 'icache' else C['core-width']
-
     io = Io({
         'addr': Input(Bits(C['paddr-width'])),
         'rtype': Input(Bits(access_rtype.bitwidth)),
         'line': Input(Bits(CC.line_width)),
-        'result': Output(Bits(output_width))
+        'result': Output(Bits(C['core-width']))
     })
 
     zero = Wire(Bits(1))
@@ -239,7 +237,9 @@ def Aligner(CC : CacheConfig):
 
     if CC.cache_type == 'icache':
         data_words = SplitLine(io.line, 32)
-        io.result <<= data_words[GetIndex(addr_byte_index, 32)]
+        io.result <<= ZeroExtend(
+            data_words[GetIndex(addr_byte_index, 32)],
+            C['core-width'])
 
     else:
         data_bytes = SplitLine(io.line, 8)
@@ -315,13 +315,13 @@ def Cache(CC : CacheConfig):
         s2_resp_data <<= aligner.result
 
     #
-    # Stage 0: Metadata read
+    # Stage 0: Cache read
     #
 
     s0_req <<= io.cpu_req
 
     meta_array.read.addr <<= s0_req.addr
-    data_array.read.set <<= CC.Set(s0_req.addr)
+    data_array.read.addr <<= s0_req.addr
 
     #
     # Stage 1: Handle Request
