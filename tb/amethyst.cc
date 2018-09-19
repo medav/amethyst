@@ -4,7 +4,7 @@
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
-#include "VGeodeCore.h"
+#include "VAmethyst.h"
 
 #define MEMSIZE 4096
 
@@ -16,25 +16,52 @@ double sc_time_stamp() {
 
 typedef struct _CaptureSignals {
     uint64_t i_raddr;
-    uint8_t i_ren;
     uint64_t d_raddr;
-    uint8_t d_ren;
     uint64_t d_waddr;
-    uint64_t d_wdata;
+    uint64_t d_wdata[8];
     uint8_t d_wen;
 } CaptureSignals;
 
-void HandleCapture(VGeodeCore * top, CaptureSignals& signals) {
+// VL_IN8(io_clock,0,0);
+// VL_IN8(io_reset,0,0);
+
+// VL_OUT8(io_imem_read_valid,0,0);
+// VL_IN8(io_imem_read_ready,0,0);
+// VL_OUT64(io_imem_read_addr,63,0);
+
+// VL_IN8(io_imem_resp_valid,0,0);
+// VL_OUT8(io_imem_resp_ready,0,0);
+// VL_OUTW(io_imem_resp_data,511,0,16);
+// VL_OUT64(io_imem_resp_addr,63,0);
+
+// VL_OUT8(io_imem_write_valid,0,0);
+// VL_IN8(io_imem_write_ready,0,0);
+// VL_OUTW(io_imem_write_data,511,0,16);
+// VL_OUT64(io_imem_write_addr,63,0);
+
+// VL_OUT8(io_dmem_read_valid,0,0);
+// VL_IN8(io_dmem_read_ready,0,0);
+// VL_OUT64(io_dmem_read_addr,63,0);
+
+// VL_IN8(io_dmem_resp_valid,0,0);
+// VL_OUT8(io_dmem_resp_ready,0,0);
+// VL_OUTW(io_dmem_resp_data,511,0,16);
+// VL_OUT64(io_dmem_resp_addr,63,0);
+
+// VL_OUT8(io_dmem_write_valid,0,0);
+// VL_IN8(io_dmem_write_ready,0,0);
+// VL_OUTW(io_dmem_write_data,511,0,16);
+// VL_OUT64(io_dmem_write_addr,63,0);
+
+void HandleCapture(VAmethyst * top, CaptureSignals& signals) {
     signals.i_raddr = top->io_imem_r_addr;
-    signals.i_ren = top->io_imem_r_en;
     signals.d_raddr = top->io_dmem_r_addr;
-    signals.d_ren = top->io_dmem_r_en;
     signals.d_waddr = top->io_dmem_w_addr;
     signals.d_wdata = top->io_dmem_w_data;
     signals.d_wen = top->io_dmem_w_en;
 }
 
-void HandleIMem(VGeodeCore * top, uint8_t * mem, CaptureSignals& signals) {
+void HandleIMem(VAmethyst * top, uint8_t * mem, CaptureSignals& signals) {
     if (signals.i_ren) {
         if (signals.i_raddr < MEMSIZE - 4) {
             top->io_imem_r_data = *((uint32_t *)(mem + signals.i_raddr));
@@ -46,7 +73,7 @@ void HandleIMem(VGeodeCore * top, uint8_t * mem, CaptureSignals& signals) {
     }
 }
 
-void HandleDMem(VGeodeCore * top, uint8_t * mem, CaptureSignals& signals) {
+void HandleDMem(VAmethyst * top, uint8_t * mem, CaptureSignals& signals) {
 
     if (signals.d_ren) {
         if (signals.d_raddr < MEMSIZE - 8) {
@@ -78,7 +105,7 @@ int main(int argc, char **argv) {
     ifs.read((char *)mem, MEMSIZE);
     ifs.close();
 
-    VGeodeCore * top = new VGeodeCore;
+    VAmethyst * top = new VAmethyst;
     VerilatedVcdC * vcd = new VerilatedVcdC;
 
     top->trace(vcd, 99);
@@ -89,6 +116,9 @@ int main(int argc, char **argv) {
     //
 
     CaptureSignals signals;
+
+    top->io_imem_read_ready = 1;
+    top->io_dmem_read_ready = 1;
 
     top->io_reset = 1;
     for (int i = 0; i < 10; i++) {
