@@ -4,15 +4,15 @@ VERILATOR=verilator
 PYTHON=python3
 CXX=g++
 
-TOP=GeodeCore
+TOP=Amethyst
 
 BUILDDIR=build
 VGENDIR=$(BUILDDIR)/verilator-gen
 
 RTLSRC=$(wildcard rtl/*.py)
-VSRC=$(BUILDDIR)/geode.v
-TBSRC=tb/geode.cc
-VSIM=build/geode
+VSRC=$(BUILDDIR)/amethyst.v
+TBSRC=tb/amethyst.cc
+VSIM=build/amethyst
 
 VFLAGS= \
 	--Mdir build/verilator-gen \
@@ -40,8 +40,8 @@ build-dirs:
 app:
 	$(MAKE) -C app/
 
-$(VSRC): $(RTLSRC)
-	$(PYTHON) geode.py
+$(VSRC): $(RTLSRC) | build-dirs
+	$(PYTHON) build.py
 
 $(VSIM): $(TBSRC) $(VSRC) | build-dirs
 	$(VERILATOR) $(VFLAGS) $(VSRC)
