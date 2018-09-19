@@ -153,8 +153,7 @@ if_id_bundle = {
 
 if_id_bundle_reset = {
     'valid': False,
-    'pc': 0,
-    'inst': 0
+    'pc': 0
 }
 
 id_ex_bundle = {
