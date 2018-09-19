@@ -16,7 +16,7 @@ IsReturn = lambda btb_entry: btb_entry(entry_size - tag_bits - 1, C['paddr-width
 Target = lambda btb_entry: btb_entry(C['paddr-width'] - 1, 0)
 
 def BtbHashFunction(pc):
-    return pc(hash_bits, 0)
+    return pc(hash_bits - 1, 0)
 
 @Module
 def BranchTargetBuffer():

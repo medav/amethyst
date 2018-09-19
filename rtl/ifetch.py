@@ -104,6 +104,6 @@ def IFetchStage():
 
     io.if_id.pc <<= if3_pc
     io.if_id.valid <<= if3_valid & ~io.icache.miss_stall & ~io.misspec.valid
-    io.inst <<= io.icache.cpu_resp.data
+    io.inst <<= io.icache.cpu_resp.data(31, 0)
 
     NameSignals(locals())
