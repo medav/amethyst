@@ -44,26 +44,19 @@ def IFetchStage():
     ras.pop.valid <<= False
 
     pc = Reg(Bits(C['paddr-width']), reset_value=C['reset-addr'])
-    pc_valid = Reg(Bits(1), reset_value=True)
     pred_pc = Wire(Bits(C['paddr-width']))
     next_pc = Wire(Bits(C['paddr-width']))
 
-    s2_pc = Reg(Bits(C['paddr-width']), reset_value=0)
-    s2_valid = Reg(Bits(1), reset_value=False)
-
-    s3_pc = Reg(Bits(C['paddr-width']), reset_value=0)
-    s3_valid = Reg(Bits(1), reset_value=False)
+    if3_pc = Reg(Bits(C['paddr-width']), reset_value=0)
+    if3_valid = Reg(Bits(1), reset_value=False)
 
     with ~io.icache.miss_stall & ~io.hazard_stall:
         pc <<= next_pc
-        s2_pc <<= pc
-        s2_valid <<= pc_valid
-
-        s3_pc <<= pc
-        s3_valid <<= s2_valid
+        if3_pc <<= pc
+        if3_valid <<= ~io.misspec.valid
 
     #
-    # Stage 1: Next PC prediction and selection
+    # Stage IF1: Next PC prediction and selection
     #
 
     #
@@ -92,29 +85,25 @@ def IFetchStage():
             next_pc <<= pred_pc
 
     #
-    # Stage 2: Send icache request
+    # Stage IF2: Send icache request
     #
 
-    io.icache.cpu_req.valid <<= True
+    io.icache.cpu_req.valid <<= ~io.misspec.valid
     io.icache.cpu_req.addr <<= pc
     io.icache.cpu_req.rtype <<= access_rtype.w
     io.icache.cpu_req.read <<= True
     io.icache.cpu_stall <<= io.hazard_stall
 
     #
-    # Stage 3: Wait for icache
+    # Stage IF3: icache will latch read data.
+    #
+    # N.B. The cache latches the output data it generates, which needs to
+    # bypass the if_id register to keep from introducing an extra pipeline
+    # stage.
     #
 
-    # Nothing happens here since it's entirely in the cache.
-
-    #
-    # Stage 4: Emit instruction to decode stage
-    #
-    # N.B. This is overlapped with decode
-    #
-
-    io.if_id.pc <<= s3_pc
-    io.if_id.valid <<= s3_valid & ~io.icache.miss_stall
-    io.if_id.inst <<= io.icache.cpu_resp.data
+    io.if_id.pc <<= if3_pc
+    io.if_id.valid <<= if3_valid & ~io.icache.miss_stall & ~io.misspec.valid
+    io.inst <<= io.icache.cpu_resp.data
 
     NameSignals(locals())

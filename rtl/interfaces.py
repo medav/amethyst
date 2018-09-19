@@ -148,8 +148,7 @@ reg_write_bundle = {
 
 if_id_bundle = {
     'valid': Bits(1),
-    'pc': Bits(C['paddr-width']),
-    'inst': Bits(32)
+    'pc': Bits(C['paddr-width'])
 }
 
 if_id_bundle_reset = {

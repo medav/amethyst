@@ -43,6 +43,7 @@ def Amethyst():
     # Pipeline Registers
     #
 
+    if_id_reg = Reg(if_id_bundle, reset_value=if_id_bundle_reset)
     id_ex_reg = Reg(id_ex_bundle, reset_value=id_ex_bundle_reset)
     ex_mem_reg = Reg(ex_mem_bundle, reset_value=ex_mem_bundle_reset)
     mem_wb_reg = Reg(mem_wb_bundle, reset_value=mem_wb_bundle_reset)
@@ -72,11 +73,16 @@ def Amethyst():
     #
     # 1. IFetch Stage
     #
+    # N.B. Technically this is a three stage step but it is fully pipelined and
+    # contained inside the ifetch_stage top.
+    #
 
     icache.cpu_req <<= ifetch_stage.icache.cpu_req
     icache.cpu_stall <<= ifetch_stage.icache.cpu_stall
     ifetch_stage.icache.miss_stall <<= icache.miss_stall
     ifetch_stage.icache.cpu_resp <<= icache.cpu_resp
+
+    if_id_reg <<= ifetch_stage.if_id
 
     # ifetch_stage.branch <<= mem_stage.branch
     # ifetch_stage.branch_target <<= mem_stage.branch_target
@@ -85,7 +91,8 @@ def Amethyst():
     # 2. IDecode Stage
     #
 
-    idecode_stage.if_id <<= ifetch_stage.if_id
+    idecode_stage.if_id <<= if_id_reg
+    idecode_stage.inst <<= ifetch_stage.inst
     id_ex_reg <<= idecode_stage.id_ex
 
     idecode_stage.reg_write <<= writeback_stage.reg_write
