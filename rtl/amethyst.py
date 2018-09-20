@@ -11,6 +11,7 @@ import mem
 import writeback
 import forward
 import hazard
+import branch
 
 @Module
 def Amethyst():
@@ -49,7 +50,7 @@ def Amethyst():
     mem_wb_reg = Reg(mem_wb_bundle, reset_value=mem_wb_bundle_reset)
 
     #
-    # Forward Unit
+    # Forward, Hazard, and Branch Units
     #
 
     fwd = Instance(forward.ForwardUnit())
@@ -60,15 +61,18 @@ def Amethyst():
     fwd.mem_reg_write <<= 1
     fwd.wb_reg_write <<= 1
 
-    #
-    # Hazard Unit
-    #
-
     hzd = Instance(hazard.HazardUnit())
     hzd.ex_mem_read <<= id_ex_reg.ctrl.mem.mem_read
     hzd.ex_rd <<= id_ex_reg.ctrl.inst.rd
     hzd.id_rs1 <<= idecode_stage.id_ex.ctrl.inst.rs1
     hzd.id_rs2 <<= idecode_stage.id_ex.ctrl.inst.rs2
+
+    bru = Instance(branch.BranchUnit())
+    bru.ex_pc <<= id_ex_reg.ctrl.inst.pc
+    bru.mem_pc <<= ex_mem_reg.ctrl.inst.pc
+    bru.branch.taken
+    bru.branch.target
+    bru.branch.is_return
 
     #
     # 1. IFetch Stage

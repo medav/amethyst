@@ -195,3 +195,23 @@ mem_wb_bundle_reset = {
     'ctrl': ctrl_bundle_reset,
     'alu_result': 0
 }
+
+#
+# Other
+#
+
+misspec_bundle = {
+    'valid': Bits(1),
+    'pc': Bits(C['paddr-width']),
+    'target': Bits(C['paddr-width']),
+    'taken': Bits(1),
+    'is_return': Bits(1)
+}
+
+misspec_bundle_reset = {
+    'valid': False,
+    'pc': 0,
+    'target': 0,
+    'taken': False,
+    'is_return': False
+}

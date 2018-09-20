@@ -27,13 +27,7 @@ def IFetchStage():
             'miss_stall': Flip(Bits(1)),
             'cpu_resp': Flip(cpu_cache_resp)
         }),
-        'misspec': Input({
-            'valid': Bits(1),
-            'pc': Bits(C['paddr-width']),
-            'target': Bits(C['paddr-width']),
-            'taken': Bits(1),
-            'is_return': Bits(1)
-        }),
+        'misspec': Input(misspec_bundle),
         'hazard_stall': Input(Bits(1))
     })
 

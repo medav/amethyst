@@ -17,8 +17,11 @@ def MemStage():
 
     io = Io({
         'ex_mem': Input(ex_mem_bundle),
-        'branch': Output(Bits(1)),
-        'branch_target': Output(Bits(C['paddr-width'])),
+        'branch': Output({
+            'valid': Bits(1),
+            'target': Bits(C['paddr-width']),
+            'is_return': Bits(1),
+        })
         'mem_wb': Output(mem_wb_bundle)
     })
 
@@ -31,7 +34,8 @@ def MemStage():
     # instructions to be flushed).
     #
 
-    io.branch <<= io.ex_mem.ctrl.mem.branch
-    io.branch_target <<= io.ex_mem.branch_target
+    io.branch.valid <<= io.ex_mem.ctrl.mem.branch
+    io.branch.target <<= io.ex_mem.branch_target
+    io.branch.is_return <<=
 
     NameSignals(locals())
