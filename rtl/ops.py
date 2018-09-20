@@ -39,7 +39,7 @@ class ValidSetOperator(Operator):
     N.B. Reads are not clocked (I.e. done combinationally).
     """
 
-    def __init__(self, width : int, clock=None):
+    def __init__(self, width : int, clock=None, reset=None):
         super().__init__('validset')
         self.width = width
         self.addrwidth = Log2Ceil(self.width)
@@ -48,6 +48,11 @@ class ValidSetOperator(Operator):
             self.clock = DefaultClock()
         else:
             self.clock = clock
+
+        if reset is None:
+            self.reset = DefaultReset()
+        else:
+            self.reset = reset
 
         self.read_ports = []
         self.write_ports = []
@@ -90,9 +95,12 @@ class ValidSetOperator(Operator):
             VAssignRaw(VName(data), f'{set_name}[{VName(addr)}]')
 
         with VAlways([VPosedge(self.clock)]):
-            for (addr, data, enable) in self.write_ports:
-                with VIf(enable):
-                    VConnectRaw(f'{set_name}[{VName(addr)}]', VName(data))
+            with VIf(self.reset):
+                VConnectRaw(f'{set_name}', '0')
+            with VElse():
+                for (addr, data, enable) in self.write_ports:
+                    with VIf(enable):
+                        VConnectRaw(f'{set_name}[{VName(addr)}]', VName(data))
 
 @OpGen(cacheable=False)
 def ValidSet(width : int):

@@ -15,8 +15,8 @@ mem_read_request = {
 }
 
 mem_read_response = {
-    'valid': Flip(Bits(1)),
-    'ready': Bits(1),
+    'valid': Bits(1),
+    'ready': Flip(Bits(1)),
     'addr': Bits(C['paddr-width']),
     'data': Bits(C['mem-width'])
 }
@@ -30,7 +30,7 @@ mem_write_request = {
 
 mem_bundle = {
     'read': mem_read_request,
-    'resp': mem_read_response,
+    'resp': Flip(mem_read_response),
     'write': mem_write_request
 }
 

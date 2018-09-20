@@ -306,6 +306,8 @@ def Cache(CC : CacheConfig):
 
     mstates = Enum(['idle', 'read', 'evict', 'update'])
     miss_state = Reg(Bits(mstates.bitwidth), reset_value=mstates.idle)
+    complete_miss = Reg(Bits(1), reset_value=False)
+    complete_miss <<= False
 
     io.miss_stall <<= stall
 
@@ -352,7 +354,7 @@ def Cache(CC : CacheConfig):
     evict_data = Reg(Bits(CC.line_width), reset_value=0)
 
     stall <<= (miss_state != mstates.idle) | \
-        (~meta_array.resp.hit & s1_req.valid & s1_req.read)
+        (~meta_array.resp.hit & ~complete_miss & s1_req.valid & s1_req.read)
 
     #
     # Defaults
@@ -437,9 +439,10 @@ def Cache(CC : CacheConfig):
         aligner.line <<= io.mem.resp.data
 
         with io.mem.resp.valid:
-            stall <<= False
             meta_array.update.valid <<= True
             data_array.update.valid <<= True
+            miss_state <<= mstates.idle
+            complete_miss <<= True
 
     NameSignals(locals())
 
