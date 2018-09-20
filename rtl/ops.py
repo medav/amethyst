@@ -96,7 +96,7 @@ class ValidSetOperator(Operator):
 
         with VAlways([VPosedge(self.clock)]):
             with VIf(self.reset):
-                VConnectRaw(f'{set_name}', '0')
+                VConnectRaw(f'{set_name}', '\'{default:0};')
             with VElse():
                 for (addr, data, enable) in self.write_ports:
                     with VIf(enable):
