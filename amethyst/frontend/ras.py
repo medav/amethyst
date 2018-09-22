@@ -8,7 +8,7 @@ ras_index_width = Log2Ceil(ras_size)
 def ReturnAddressStack():
     io = Io({
         'ctrl': Input(ras_ctrl_bundle),
-        'top': C['paddr-width']
+        'top': Output(Bits(C['paddr-width']))
     })
 
     rstack = Mem(C['paddr-width'], ras_size)
@@ -19,14 +19,14 @@ def ReturnAddressStack():
     #
 
     push_address = Reg(Bits(ras_index_width), reset_value=0)
-    head = Wire(Bits(ras_index_width))
+    top_address = Wire(Bits(ras_index_width))
     write_address = Wire(Bits(ras_index_width))
 
-    head <<= push_address - 1
+    top_address <<= push_address - 1
 
 
     with io.ctrl.push & io.ctrl.pop:
-        write_address <<= head
+        write_address <<= top_address
 
     with otherwise:
         write_address <<= push_address
@@ -34,10 +34,10 @@ def ReturnAddressStack():
         with io.ctrl.push:
             push_address <<= push_address + 1
 
-        with io.ctrl.pop.valid:
+        with io.ctrl.pop:
             push_address <<= push_address - 1
 
     rstack.Write(write_address, io.ctrl.pc + 4, io.ctrl.push)
-    io.pop.address <<= rstack.Read(head)
+    io.top <<= rstack.Read(top_address)
 
     NameSignals(locals())
