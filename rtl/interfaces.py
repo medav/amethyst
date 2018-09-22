@@ -56,22 +56,6 @@ cpu_cache_resp = {
 # Control signal bundles
 #
 
-inst_bundle = {
-    'inst': Bits(32),
-    'pc': Bits(C['paddr-width']),
-    'rs1': Bits(Log2Ceil(C['reg-count'])),
-    'rs2': Bits(Log2Ceil(C['reg-count'])),
-    'rd': Bits(Log2Ceil(C['reg-count']))
-}
-
-inst_bundle_reset = {
-    'inst': 0,
-    'pc': 0,
-    'rs1': 0,
-    'rs2': 0,
-    'rd': 0
-}
-
 execute_ctrl_bundle = {
     'alu_src': Bits(Log2Ceil(C['reg-count'])),
     'alu_op': Bits(2),
@@ -122,7 +106,8 @@ writeback_ctrl_bundle_reset = {
 
 ctrl_bundle = {
     'valid': Bits(1),
-    'inst': inst_bundle,
+    'inst': Bits(32),
+    'pc': Bits(C['paddr-width']),
     'ex': execute_ctrl_bundle,
     'mem': mem_ctrl_bundle,
     'wb': writeback_ctrl_bundle
@@ -130,7 +115,8 @@ ctrl_bundle = {
 
 ctrl_bundle_reset = {
     'valid': False,
-    'inst': inst_bundle_reset,
+    'inst': 0,
+    'pc': 0,
     'ex': execute_ctrl_bundle_reset,
     'mem': mem_ctrl_bundle_reset,
     'wb': writeback_ctrl_bundle_reset

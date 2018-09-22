@@ -2,6 +2,7 @@ from atlas import *
 from interfaces import *
 
 from config import *
+from instructions import *
 
 @Module
 def WritebackStage():
@@ -17,7 +18,7 @@ def WritebackStage():
         'reg_write': Output(reg_write_bundle)
     })
 
-    io.reg_write.w_addr <<= io.mem_wb.ctrl.inst.rd
+    io.reg_write.w_addr <<= Rd(io.mem_wb.ctrl.inst)
 
     #
     # Register write data can come from either the result of the ex stage (the

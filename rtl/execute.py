@@ -160,7 +160,7 @@ def ExecuteStage():
     # Branch Target Generation
     #
 
-    io.ex_mem.branch_target <<= io.id_ex.ctrl.inst.pc + io.id_ex.imm
+    io.ex_mem.branch_target <<= io.id_ex.ctrl.pc + io.id_ex.imm
 
     #
     # Forwarding Logic

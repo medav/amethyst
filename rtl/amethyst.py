@@ -1,9 +1,9 @@
 from atlas import *
 
 from interfaces import *
+from instructions import *
 
 import cache
-
 import ifetch
 import idecode
 import execute
@@ -54,22 +54,22 @@ def Amethyst():
     #
 
     fwd = Instance(forward.ForwardUnit())
-    fwd.ex_rs1 <<= id_ex_reg.ctrl.inst.rs1
-    fwd.ex_rs2 <<= id_ex_reg.ctrl.inst.rs2
-    fwd.mem_rd <<= ex_mem_reg.ctrl.inst.rd
-    fwd.wb_rd <<= mem_wb_reg.ctrl.inst.rd
+    fwd.ex_rs1 <<= Rs1(id_ex_reg.ctrl.inst)
+    fwd.ex_rs2 <<= Rs2(id_ex_reg.ctrl.inst)
+    fwd.mem_rd <<= Rd(ex_mem_reg.ctrl.inst)
+    fwd.wb_rd <<= Rd(mem_wb_reg.ctrl.inst)
     fwd.mem_reg_write <<= 1
     fwd.wb_reg_write <<= 1
 
     hzd = Instance(hazard.HazardUnit())
     hzd.ex_mem_read <<= id_ex_reg.ctrl.mem.mem_read
-    hzd.ex_rd <<= id_ex_reg.ctrl.inst.rd
-    hzd.id_rs1 <<= idecode_stage.id_ex.ctrl.inst.rs1
-    hzd.id_rs2 <<= idecode_stage.id_ex.ctrl.inst.rs2
+    hzd.ex_rd <<= Rd(id_ex_reg.ctrl.inst)
+    hzd.id_rs1 <<= Rs1(idecode_stage.id_ex.ctrl.inst)
+    hzd.id_rs2 <<= Rs2(idecode_stage.id_ex.ctrl.inst)
 
     bru = Instance(branch.BranchUnit())
-    bru.ex_pc <<= id_ex_reg.ctrl.inst.pc
-    bru.mem_pc <<= ex_mem_reg.ctrl.inst.pc
+    bru.ex_pc <<= id_ex_reg.ctrl.pc
+    bru.mem_pc <<= ex_mem_reg.ctrl.pc
     bru.branch.taken
     bru.branch.target
     bru.branch.is_return

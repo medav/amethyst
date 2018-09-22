@@ -9,6 +9,18 @@ from config import *
 AluSrc = Enum(['RS2', 'IMM'])
 ITypes = Enum(['R', 'I', 'S', 'B', 'U', 'J'])
 
+#
+# Helper functions to retrieve information from an instruction. Note that the
+# only reason these are lambdas is because they're one-liners.
+#
+
+Opcode = lambda inst: inst(6, 0)
+Rd = lambda inst: inst(11, 7)
+Rs1 = lambda inst: inst(19, 15)
+Rs2 = lambda inst: inst(24, 20)
+Funct3 = lambda inst: inst(14, 12)
+Funct7 = lambda inst: inst(31, 25)
+
 class Opcodes(object):
     LOAD = 0b0000011
     STORE = 0b0100011
