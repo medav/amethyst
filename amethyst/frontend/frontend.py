@@ -1,15 +1,13 @@
 from atlas import *
-from interfaces import *
+from ..support import *
 
-from config import *
-
-from bpred import BranchPredictor
-from btb import BranchTargetBuffer
-from ras import ReturnAddressStack
+from .bpred import BranchPredictor
+from .btb import BranchTargetBuffer
+from .ras import ReturnAddressStack
 
 @Module
-def IFetchStage():
-    """The instruction fetch stage for Geode.
+def Frontend():
+    """The frontend (instruction fetch) pipeline for Amethyst
 
     This stage contains the program counter register for the pipeline and
     produces imem accesses to retrieve instructions.
@@ -27,7 +25,8 @@ def IFetchStage():
             'miss_stall': Flip(Bits(1)),
             'cpu_resp': Flip(cpu_cache_resp)
         }),
-        'misspec': Input(misspec_bundle),
+        'mispred': Input(mispred_bundle),
+        'ras_ctrl': Input(ras_ctrl_bundle),
         'hazard_stall': Input(Bits(1))
     })
 
@@ -35,7 +34,7 @@ def IFetchStage():
     btb = Instance(BranchTargetBuffer())
     ras = Instance(ReturnAddressStack())
 
-    ras.pop.valid <<= False
+    ras.ctrl <<= io.ras_ctrl
 
     pc = Reg(Bits(C['paddr-width']), reset_value=C['reset-addr'])
     pred_pc = Wire(Bits(C['paddr-width']))
@@ -47,7 +46,7 @@ def IFetchStage():
     with ~io.icache.miss_stall & ~io.hazard_stall:
         pc <<= next_pc
         if3_pc <<= pc
-        if3_valid <<= ~io.misspec.valid
+        if3_valid <<= ~io.mispred.valid
 
     #
     # Stage IF1: Next PC prediction and selection
@@ -68,12 +67,11 @@ def IFetchStage():
     # address stack (RAS) or the correct PC (correction from a misspeculation).
     #
 
-    with io.misspec.valid:
-        next_pc <<= io.misspec.target
+    with io.mispred.valid:
+        next_pc <<= io.mispred.target
     with otherwise:
         with btb.pred.valid & btb.pred.is_return:
-            next_pc <<= ras.pop.address
-            ras.pop.valid <<= True
+            next_pc <<= ras.top
 
         with otherwise:
             next_pc <<= pred_pc
@@ -82,7 +80,7 @@ def IFetchStage():
     # Stage IF2: Send icache request
     #
 
-    io.icache.cpu_req.valid <<= ~io.misspec.valid
+    io.icache.cpu_req.valid <<= ~io.mispred.valid
     io.icache.cpu_req.addr <<= pc
     io.icache.cpu_req.rtype <<= access_rtype.w
     io.icache.cpu_req.read <<= True
@@ -97,7 +95,7 @@ def IFetchStage():
     #
 
     io.if_id.pc <<= if3_pc
-    io.if_id.valid <<= if3_valid & ~io.icache.miss_stall & ~io.misspec.valid
+    io.if_id.valid <<= if3_valid & ~io.icache.miss_stall & ~io.mispred.valid
     io.inst <<= io.icache.cpu_resp.data(31, 0)
 
     NameSignals(locals())

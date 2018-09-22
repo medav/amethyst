@@ -1,17 +1,15 @@
 from atlas import *
+from .support import *
 
-from interfaces import *
-from instructions import *
-
-import cache
-import ifetch
-import idecode
-import execute
-import mem
-import writeback
-import forward
-import hazard
-import branch
+from .frontend.frontend import Frontend
+from .cache.cache import Cache, CacheConfig
+from .backend.decode import DecodeStage
+from .backend.execute import ExecuteStage
+from .backend.mem import MemStage
+from .backend.writeback import WritebackStage
+from .management.forward import ForwardUnit
+from .management.hazard import HazardUnit
+from .management.branch import BranchUnit
 
 @Module
 def Amethyst():
@@ -24,21 +22,21 @@ def Amethyst():
     # Instruction and Data Caches
     #
 
-    icache = Instance(cache.Cache(cache.CacheConfig.FromCacheType('icache')))
+    icache = Instance(Cache(CacheConfig.FromCacheType('icache')))
     io.imem <<= icache.mem
 
-    dcache = Instance(cache.Cache(cache.CacheConfig.FromCacheType('dcache')))
+    dcache = Instance(Cache(CacheConfig.FromCacheType('dcache')))
     io.dmem <<= dcache.mem
 
     #
     # Pipeline Stages
     #
 
-    ifetch_stage = Instance(ifetch.IFetchStage())
-    idecode_stage = Instance(idecode.IDecodeStage())
-    execute_stage = Instance(execute.ExecuteStage())
-    mem_stage = Instance(mem.MemStage())
-    writeback_stage = Instance(writeback.WritebackStage())
+    frontend = Instance(Frontend())
+    idecode_stage = Instance(DecodeStage())
+    execute_stage = Instance(ExecuteStage())
+    mem_stage = Instance(MemStage())
+    writeback_stage = Instance(WritebackStage())
 
     #
     # Pipeline Registers
@@ -53,7 +51,7 @@ def Amethyst():
     # Forward, Hazard, and Branch Units
     #
 
-    fwd = Instance(forward.ForwardUnit())
+    fwd = Instance(ForwardUnit())
     fwd.ex_rs1 <<= Rs1(id_ex_reg.ctrl.inst)
     fwd.ex_rs2 <<= Rs2(id_ex_reg.ctrl.inst)
     fwd.mem_rd <<= Rd(ex_mem_reg.ctrl.inst)
@@ -61,48 +59,45 @@ def Amethyst():
     fwd.mem_reg_write <<= 1
     fwd.wb_reg_write <<= 1
 
-    hzd = Instance(hazard.HazardUnit())
+    hzd = Instance(HazardUnit())
     hzd.ex_mem_read <<= id_ex_reg.ctrl.mem.mem_read
     hzd.ex_rd <<= Rd(id_ex_reg.ctrl.inst)
     hzd.id_rs1 <<= Rs1(idecode_stage.id_ex.ctrl.inst)
     hzd.id_rs2 <<= Rs2(idecode_stage.id_ex.ctrl.inst)
 
-    bru = Instance(branch.BranchUnit())
+    bru = Instance(BranchUnit())
     bru.ex_pc <<= id_ex_reg.ctrl.pc
     bru.mem_pc <<= ex_mem_reg.ctrl.pc
-    bru.branch.taken
-    bru.branch.target
-    bru.branch.is_return
+    # bru.branch.taken
+    # bru.branch.target
+    # bru.branch.is_return
 
     #
-    # 1. IFetch Stage
-    #
-    # N.B. Technically this is a three stage step but it is fully pipelined and
-    # contained inside the ifetch_stage top.
+    # F1, F2, F3: Frontend
     #
 
-    icache.cpu_req <<= ifetch_stage.icache.cpu_req
-    icache.cpu_stall <<= ifetch_stage.icache.cpu_stall
-    ifetch_stage.icache.miss_stall <<= icache.miss_stall
-    ifetch_stage.icache.cpu_resp <<= icache.cpu_resp
+    icache.cpu_req <<= frontend.icache.cpu_req
+    icache.cpu_stall <<= frontend.icache.cpu_stall
+    frontend.icache.miss_stall <<= icache.miss_stall
+    frontend.icache.cpu_resp <<= icache.cpu_resp
 
-    if_id_reg <<= ifetch_stage.if_id
+    if_id_reg <<= frontend.if_id
 
-    # ifetch_stage.branch <<= mem_stage.branch
-    # ifetch_stage.branch_target <<= mem_stage.branch_target
+    # frontend.branch <<= mem_stage.branch
+    # frontend.branch_target <<= mem_stage.branch_target
 
     #
-    # 2. IDecode Stage
+    # B1: Decode Stage
     #
 
     idecode_stage.if_id <<= if_id_reg
-    idecode_stage.inst <<= ifetch_stage.inst
+    idecode_stage.inst <<= frontend.inst
     id_ex_reg <<= idecode_stage.id_ex
 
     idecode_stage.reg_write <<= writeback_stage.reg_write
 
     #
-    # 3. Execute Stage
+    # B2: Execute Stage
     #
 
     execute_stage.id_ex <<= id_ex_reg
@@ -116,14 +111,14 @@ def Amethyst():
     execute_stage.fwd.wb_data <<= writeback_stage.reg_write.w_data
 
     #
-    # 4. Mem Stage
+    # B3: Mem Stage
     #
 
     mem_stage.ex_mem <<= ex_mem_reg
     mem_wb_reg <<= mem_stage.mem_wb
 
     #
-    # 5. Writeback Stage
+    # B4: Writeback Stage
     #
 
     writeback_stage.mem_wb <<= mem_wb_reg

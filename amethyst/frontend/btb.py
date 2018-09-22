@@ -1,7 +1,5 @@
 from atlas import *
-from interfaces import *
-
-from config import *
+from ..support import *
 
 C['paddr-width'] = C['paddr-width']
 btb_size = C['btb']['size']

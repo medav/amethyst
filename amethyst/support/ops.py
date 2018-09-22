@@ -1,6 +1,5 @@
 from atlas import *
 
-
 class BitOrReduceOperator(Operator):
     """Operator that reduces a bits signal via logic OR."""
 

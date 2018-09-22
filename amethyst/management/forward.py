@@ -1,7 +1,5 @@
 from atlas import *
-from interfaces import *
-
-from config import *
+from ..support import *
 
 fwd = Enum(['none', 'mem', 'wb'])
 

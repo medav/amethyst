@@ -2,10 +2,7 @@ from dataclasses import dataclass
 from contextlib import contextmanager
 
 from atlas import *
-from interfaces import *
-from instructions import *
-
-from config import *
+from ..support import *
 
 
 def SetControlSignals(inst_spec, itype, ctrl):
@@ -210,8 +207,25 @@ def RegisterFile():
 
     NameSignals(locals())
 
+def HandleRasCtrl(ras_ctrl, inst, pc):
+    link_rs1 = (Rs1(inst) == 1) | (Rs1(inst) == 5)
+    link_rd = (Rd(inst) == 1) | (Rd(inst) == 5)
+
+    ras_ctrl.pc <<= pc
+    ras_ctrl.push <<= False
+    ras_ctrl.pop <<= False
+
+    with Opcode(inst) == Opcodes.JALR:
+        ras_ctrl.push <<= link_rd
+
+        with ~link_rd & link_rs1:
+            ras_ctrl.pop <<= True
+
+        with link_rd & link_rs1 & (Rs1(inst) != Rd(inst)):
+            ras_ctrl.pop <<= True
+
 @Module
-def IDecodeStage():
+def DecodeStage():
     """The instruction decode stage for Geode.
 
     This stage consumes the instruction produced by the most recent imem access
@@ -224,6 +238,7 @@ def IDecodeStage():
         'if_id': Input(if_id_bundle),
         'inst': Input(Bits(32)),
         'reg_write': Input(reg_write_bundle),
+        'ras_ctrl': Output(ras_ctrl_bundle),
         'id_ex': Output(id_ex_bundle)
     })
 
@@ -275,6 +290,12 @@ def IDecodeStage():
     #
 
     Control(inst, itype, io.id_ex.ctrl)
+
+    #
+    # TODO: Documentation
+    #
+
+    HandleRasCtrl(io.ras_ctrl, inst, io.if_id.pc)
 
     #
     # GenerateImmediate produces logic that consume the itype (instruction

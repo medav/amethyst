@@ -5,8 +5,7 @@ sys.path.append('./rtl')
 sys.path.append('../atlas')
 
 from atlas import *
-from config import *
-import amethyst
+from amethyst import amethyst
 
 circuit = Circuit('amethyst', True, True)
 

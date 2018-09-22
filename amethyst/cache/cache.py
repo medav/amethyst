@@ -2,13 +2,8 @@ from dataclasses import dataclass
 from functools import reduce
 
 from atlas import *
-from interfaces import *
-from instructions import *
-from ops import *
+from ..support import *
 
-import forward
-
-from config import *
 
 #
 # Since this code is used for both the I+D caches, some disambiguation between

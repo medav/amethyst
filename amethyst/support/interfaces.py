@@ -1,6 +1,5 @@
 from atlas import *
-
-from config import *
+from .config import *
 
 #
 # Memory signals
@@ -200,4 +199,10 @@ mispred_bundle_reset = {
     'target': 0,
     'taken': False,
     'is_return': False
+}
+
+ras_ctrl_bundle = {
+    'push': Bits(1),
+    'pop': Bits(1),
+    'pc': Bits(C['paddr-width'])
 }

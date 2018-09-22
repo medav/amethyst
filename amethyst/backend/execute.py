@@ -1,13 +1,8 @@
 from dataclasses import dataclass
 
 from atlas import *
-from interfaces import *
-from instructions import *
-from ops import *
-
-import forward
-
-from config import *
+from ..support import *
+from ..management import forward
 
 @Module
 def ArithmeticLogicUnit():

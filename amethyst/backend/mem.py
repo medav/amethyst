@@ -1,7 +1,5 @@
 from atlas import *
-from interfaces import *
-
-from config import *
+from ..support import *
 
 @Module
 def MemStage():
@@ -21,7 +19,7 @@ def MemStage():
             'valid': Bits(1),
             'target': Bits(C['paddr-width']),
             'is_return': Bits(1),
-        })
+        }),
         'mem_wb': Output(mem_wb_bundle)
     })
 
@@ -36,6 +34,6 @@ def MemStage():
 
     io.branch.valid <<= io.ex_mem.ctrl.mem.branch
     io.branch.target <<= io.ex_mem.branch_target
-    io.branch.is_return <<=
+    io.branch.is_return <<= False
 
     NameSignals(locals())
