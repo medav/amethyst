@@ -40,13 +40,18 @@ def Frontend():
     pred_pc = Wire(Bits(C['paddr-width']))
     next_pc = Wire(Bits(C['paddr-width']))
 
+    if2_pc = Reg(Bits(C['paddr-width']), reset_value=0)
+    if2_valid = Reg(Bits(1), reset_value=False)
+
     if3_pc = Reg(Bits(C['paddr-width']), reset_value=0)
     if3_valid = Reg(Bits(1), reset_value=False)
 
     with ~io.icache.miss_stall & ~io.hazard_stall:
         pc <<= next_pc
-        if3_pc <<= pc
-        if3_valid <<= ~io.mispred.valid
+        if2_pc <<= pc
+        if3_pc <<= if2_pc
+        if2_valid <<= ~io.mispred.valid
+        if3_valid <<= ~io.mispred.valid & if2_valid
 
     #
     # Stage IF1: Next PC prediction and selection
@@ -59,8 +64,12 @@ def Frontend():
     #
 
     pred_pc <<= pc + 4
+
     with bpred.pred.taken & btb.pred.valid & ~btb.pred.is_return:
         pred_pc <<= btb.pred.target
+
+    with btb.pred.valid & btb.pred.is_return:
+        pred_pc <<= ras.top
 
     #
     # The actual next PC is either the prediction, a value from the return
@@ -70,11 +79,7 @@ def Frontend():
     with io.mispred.valid:
         next_pc <<= io.mispred.target
     with otherwise:
-        with btb.pred.valid & btb.pred.is_return:
-            next_pc <<= ras.top
-
-        with otherwise:
-            next_pc <<= pred_pc
+        next_pc <<= pred_pc
 
     #
     # Stage IF2: Send icache request
