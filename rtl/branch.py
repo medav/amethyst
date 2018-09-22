@@ -13,19 +13,19 @@ def BranchUnit():
             'target': Bits(C['paddr-width']),
             'is_return': Bits(1),
         }),
-        'misspec': Output(misspec_bundle)
+        'mispred': Output(mispred_bundle)
     })
 
-    misspec = Reg(misspec_bundle, reset_value=misspec_bundle_reset)
+    mispred = Reg(mispred_bundle, reset_value=mispred_bundle_reset)
 
-    misspec.valid <<= False
+    mispred.valid <<= False
 
     with io.branch.target != io.ex_pc:
-        misspec.valid <<= True
-        misspec.pc <<= io.mem_pc
-        misspec.target <<= io.branch.target
-        misspec.taken <<= io.branch.taken
-        misspec.is_return <<= io.branch.is_return
+        mispred.valid <<= True
+        mispred.pc <<= io.mem_pc
+        mispred.target <<= io.branch.target
+        mispred.taken <<= io.branch.taken
+        mispred.is_return <<= io.branch.is_return
 
     NameSignals(locals())
 

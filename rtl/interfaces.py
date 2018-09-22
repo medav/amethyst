@@ -200,7 +200,7 @@ mem_wb_bundle_reset = {
 # Other
 #
 
-misspec_bundle = {
+mispred_bundle = {
     'valid': Bits(1),
     'pc': Bits(C['paddr-width']),
     'target': Bits(C['paddr-width']),
@@ -208,7 +208,7 @@ misspec_bundle = {
     'is_return': Bits(1)
 }
 
-misspec_bundle_reset = {
+mispred_bundle_reset = {
     'valid': False,
     'pc': 0,
     'target': 0,
