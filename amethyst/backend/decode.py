@@ -244,12 +244,6 @@ def DecodeStage():
 
     inst = Wire(Bits(32))
 
-    #
-    # The ifetch stage may read an invalid instruction in the case where a
-    # branch is taken. This is indicated by io.if_id.valid. If it's 0, replace
-    # the instruction to decode with 0 (which will result in a nop).
-    #
-
     with io.if_id.valid:
         inst <<= io.inst
     with otherwise:
