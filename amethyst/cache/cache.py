@@ -434,6 +434,7 @@ def Cache(CC : CacheConfig):
         aligner.line <<= io.mem.resp.data
 
         with io.mem.resp.valid:
+            stall <<= False
             meta_array.update.valid <<= True
             data_array.update.valid <<= True
             miss_state <<= mstates.idle
