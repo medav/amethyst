@@ -68,9 +68,7 @@ def Amethyst():
     bru = Instance(BranchUnit())
     bru.ex_pc <<= id_ex_reg.ctrl.pc
     bru.mem_pc <<= ex_mem_reg.ctrl.pc
-    # bru.branch.taken
-    # bru.branch.target
-    # bru.branch.is_return
+    bru.branch <<= mem_stage.branch
 
     #
     # F1, F2, F3: Frontend
@@ -80,11 +78,9 @@ def Amethyst():
     icache.cpu_stall <<= frontend.icache.cpu_stall
     frontend.icache.miss_stall <<= icache.miss_stall
     frontend.icache.cpu_resp <<= icache.cpu_resp
+    frontend.mispred <<= bru.mispred
 
     if_id_reg <<= frontend.if_id
-
-    # frontend.branch <<= mem_stage.branch
-    # frontend.branch_target <<= mem_stage.branch_target
 
     #
     # B1: Decode Stage
@@ -92,7 +88,11 @@ def Amethyst():
 
     idecode_stage.if_id <<= if_id_reg
     idecode_stage.inst <<= frontend.inst
-    id_ex_reg <<= idecode_stage.id_ex
+
+    with bru.mispred.valid:
+        id_ex_reg <<= id_ex_bundle_reset
+    with otherwise:
+        id_ex_reg <<= idecode_stage.id_ex
 
     idecode_stage.reg_write <<= writeback_stage.reg_write
 
@@ -101,7 +101,11 @@ def Amethyst():
     #
 
     execute_stage.id_ex <<= id_ex_reg
-    ex_mem_reg <<= execute_stage.ex_mem
+
+    with bru.mispred.valid:
+        ex_mem_reg <<= ex_mem_bundle_reset
+    with otherwise:
+        ex_mem_reg <<= execute_stage.ex_mem
 
     dcache.cpu_req <<= execute_stage.dcache.cpu_req
 
@@ -115,7 +119,11 @@ def Amethyst():
     #
 
     mem_stage.ex_mem <<= ex_mem_reg
-    mem_wb_reg <<= mem_stage.mem_wb
+
+    with bru.mispred.valid:
+        mem_wb_reg <<= mem_wb_bundle_reset
+    with otherwise:
+        mem_wb_reg <<= mem_stage.mem_wb
 
     #
     # B4: Writeback Stage

@@ -1,32 +1,31 @@
 [*]
-[*] GTKWave Analyzer v3.3.93 (w)1999-2018 BSI
-[*] Sat Sep 22 06:22:17 2018
+[*] GTKWave Analyzer v3.3.94 (w)1999-2018 BSI
+[*] Sun Sep 23 03:44:11 2018
 [*]
-[dumpfile] "E:\Users\micha\Documents\projects\amethyst\tb\dump.vcd"
-[savefile] "E:\Users\micha\Documents\projects\amethyst\tb\waveform.gtkw"
-[timestart] 30
-[size] 2048 1089
-[pos] -269 -269
-*-2.000000 30 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "C:\Users\micha\Documents\projects\amethyst\tb\dump.vcd"
+[savefile] "C:\Users\micha\Documents\projects\amethyst\tb\waveform.gtkw"
+[timestart] 61
+[size] 1500 937
+[pos] -87 -87
+*-3.868174 85 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Amethyst.
-[treeopen] TOP.Amethyst.Cache_0b0d_0.
 [treeopen] TOP.Amethyst.Frontend_0.
-[sst_width] 347
-[signals_width] 439
+[sst_width] 282
+[signals_width] 310
 [sst_expanded] 1
-[sst_vpaned_height] 687
+[sst_vpaned_height] 574
 @28
 TOP.io_clock
 TOP.io_reset
-@800200
+@c00200
 -imem_read
 @22
 TOP.io_imem_read_addr[63:0]
 @28
 TOP.io_imem_read_ready
 TOP.io_imem_read_valid
-@1000200
+@1401200
 -imem_read
 @c00200
 -dmem_read
@@ -37,7 +36,7 @@ TOP.io_dmem_read_ready
 TOP.io_dmem_read_valid
 @1401200
 -dmem_read
-@800200
+@c00200
 -imem_resp
 @22
 TOP.io_imem_resp_addr[63:0]
@@ -45,13 +44,54 @@ TOP.io_imem_resp_data[511:0]
 @28
 TOP.io_imem_resp_ready
 TOP.io_imem_resp_valid
-@1000200
+@1401200
 -imem_resp
+@800200
+-if_id_reg
+@24
+[color] 1
+TOP.Amethyst.DecodeStage_0.io_if_id_pc[63:0]
 @28
-TOP.Amethyst.Frontend_0.io_if_id_valid
+[color] 1
+TOP.Amethyst.DecodeStage_0.io_if_id_valid
 @22
-TOP.Amethyst.Frontend_0.io_inst[31:0]
-@25
-TOP.Amethyst.Frontend_0.io_if_id_pc[63:0]
+[color] 1
+TOP.Amethyst.DecodeStage_0.io_inst[31:0]
+@1000200
+-if_id_reg
+@800200
+-id
+@28
+TOP.Amethyst.DecodeStage_0.io_if_id_valid
+@24
+TOP.Amethyst.DecodeStage_0.io_if_id_pc[63:0]
+@1000200
+-id
+@800200
+-ex
+@28
+TOP.Amethyst.ExecuteStage_0.io_id_ex_ctrl_valid
+@24
+TOP.Amethyst.ExecuteStage_0.io_id_ex_ctrl_pc[63:0]
+@1000200
+-ex
+@800200
+-mem
+@28
+TOP.Amethyst.MemStage_0.io_ex_mem_ctrl_valid
+@24
+TOP.Amethyst.MemStage_0.io_ex_mem_ctrl_pc[63:0]
+@1000200
+-mem
+@800200
+-writeback
+@28
+[color] 2
+TOP.Amethyst.WritebackStage_0.io_mem_wb_ctrl_valid
+@24
+[color] 2
+TOP.Amethyst.WritebackStage_0.io_mem_wb_ctrl_pc[63:0]
+@1000200
+-writeback
 [pattern_trace] 1
 [pattern_trace] 0

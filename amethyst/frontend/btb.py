@@ -33,9 +33,8 @@ def BranchTargetBuffer():
         })
     })
 
-    valid_bits = Reg(
-        [Bits(1) for _ in range(btb_size)],
-        reset_value=[0 for _ in range(btb_size)])
+    valid_bits = ValidSet(btb_size)
+    valid_reg = Reg(Bits(1), reset_value=False)
 
     tag_match = Wire(Bits(1))
     table = Mem(entry_size, btb_size)
@@ -57,6 +56,7 @@ def BranchTargetBuffer():
 
     table_index = BtbHashFunction(io.cur_pc)
     read_entry <<= table.Read(table_index)
+    valid_reg <<= valid_bits[table_index]
 
     tag_match <<= Tag(read_entry) == io.cur_pc(C['paddr-width'] - 1, hash_bits)
 
@@ -67,7 +67,7 @@ def BranchTargetBuffer():
     # will never be predicted as a branch.
     #
 
-    io.pred.valid <<= valid_bits[table_index] & tag_match
+    io.pred.valid <<= valid_reg & tag_match
     io.pred.is_return <<= IsReturn(read_entry)
     io.pred.target <<= Target(read_entry)
 
@@ -88,7 +88,6 @@ def BranchTargetBuffer():
     update_index = BtbHashFunction(io.update.pc)
     table.Write(update_index, write_entry, io.update.valid)
 
-    with io.update.valid:
-        valid_bits[update_index] <<= True
+    valid_bits.Set(update_index, io.update.valid, io.update.valid)
 
     NameSignals(locals())

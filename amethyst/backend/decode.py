@@ -266,6 +266,7 @@ def DecodeStage():
     # detection and data forwarding.
     #
 
+    io.id_ex.ctrl.valid <<= io.if_id.valid
     io.id_ex.ctrl.inst <<= inst
     io.id_ex.ctrl.pc <<= io.if_id.pc
 

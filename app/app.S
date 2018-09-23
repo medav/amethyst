@@ -18,11 +18,4 @@ _init:
     li s0, 13
     li s0, 14
     li s0, 15
-    li s0, 16
-    li s0, 17
-    li s0, 18
-    li s0, 19
-    li s0, 20
-    li s0, 21
-    li s0, 22
-    li s0, 23
+    j _init
