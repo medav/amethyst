@@ -11,7 +11,7 @@ void swap(uint8_t arr[ARRSIZE], int j) {
     arr[j + 1] = temp;
 }
 
-void _start() {
+int main() {
     int i, j;
 
     for (i = 0; i < ARRSIZE; i++) {
@@ -19,4 +19,6 @@ void _start() {
             swap(arr, j);
         }
     }
+
+    return 0;
 }

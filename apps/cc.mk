@@ -10,7 +10,7 @@ all: $(APP).img
 	$(OBJCOPY) -O binary $< $@
 
 %.elf: %.cc ../link.ld
-	$(CC) -T../link.ld $< -mabi=lp64 -march=rv64i -nostdlib -static -Wl,--no-gc-sections -o $@
+	$(CC) -T../link.ld ../crt0.S $< -mabi=lp64 -march=rv64i -nostdlib -static -Wl,--no-gc-sections -o $@
 
 clean:
 	rm -f *.bin *.img *.elf
