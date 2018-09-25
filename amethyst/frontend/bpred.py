@@ -15,7 +15,7 @@ def BranchPredictor():
         })
     })
 
-    io.pred.taken <<= False
+    io.pred.taken <<= True
 
     NameSignals(locals())
 

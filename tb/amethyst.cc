@@ -7,7 +7,7 @@
 
 #include "VAmethyst.h"
 
-#define MEMSIZE 4096
+#define MEMSIZE 0x20000
 
 #define ASSERT(condition) \
     if (!(condition)) { \

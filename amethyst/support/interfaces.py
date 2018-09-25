@@ -58,6 +58,8 @@ cpu_cache_resp = {
 execute_ctrl_bundle = {
     'alu_src': Bits(Log2Ceil(C['reg-count'])),
     'alu_op': Bits(2),
+    'lui': Bits(1),
+    'auipc': Bits(1),
     'funct3': Bits(3),
     'funct7': Bits(7)
 }
@@ -65,6 +67,8 @@ execute_ctrl_bundle = {
 execute_ctrl_bundle_reset = {
     'alu_src': 0,
     'alu_op': 0,
+    'lui': False,
+    'auipc': False,
     'funct3': 0,
     'funct7': 0
 }

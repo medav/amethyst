@@ -79,8 +79,10 @@ def Amethyst():
     frontend.icache.miss_stall <<= icache.miss_stall
     frontend.icache.cpu_resp <<= icache.cpu_resp
     frontend.mispred <<= bru.mispred
+    frontend.frontend_stall <<= dcache.miss_stall
 
-    if_id_reg <<= frontend.if_id
+    with ~dcache.miss_stall:
+        if_id_reg <<= frontend.if_id
 
     #
     # B1: Decode Stage
@@ -92,7 +94,8 @@ def Amethyst():
     with bru.mispred.valid:
         id_ex_reg <<= id_ex_bundle_reset
     with otherwise:
-        id_ex_reg <<= idecode_stage.id_ex
+        with ~dcache.miss_stall:
+            id_ex_reg <<= idecode_stage.id_ex
 
     idecode_stage.reg_write <<= writeback_stage.reg_write
 
@@ -105,7 +108,8 @@ def Amethyst():
     with bru.mispred.valid:
         ex_mem_reg <<= ex_mem_bundle_reset
     with otherwise:
-        ex_mem_reg <<= execute_stage.ex_mem
+        with ~dcache.miss_stall:
+            ex_mem_reg <<= execute_stage.ex_mem
 
     dcache.cpu_req <<= execute_stage.dcache.cpu_req
 
@@ -120,7 +124,7 @@ def Amethyst():
 
     mem_stage.ex_mem <<= ex_mem_reg
 
-    with bru.mispred.valid:
+    with bru.mispred.valid | dcache.miss_stall:
         mem_wb_reg <<= mem_wb_bundle_reset
     with otherwise:
         mem_wb_reg <<= mem_stage.mem_wb

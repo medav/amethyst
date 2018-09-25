@@ -120,8 +120,6 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
         with alu_op0_match & alu_op1_match & funct3_match & funct7_match:
             alu_inst <<= inst_spec.alu_inst
 
-
-
 @Module
 def ExecuteStage():
     """The execute stage for Geode.
@@ -206,7 +204,24 @@ def ExecuteStage():
     #
 
     io.ex_mem.rs2_data <<= io.id_ex.rs2_data
-    io.ex_mem.alu_result <<= alu.result
+
+    with io.id_ex.ctrl.ex.lui:
+        io.ex_mem.alu_result <<= io.id_ex.imm
+    with otherwise:
+        io.ex_mem.alu_result <<= alu.result
+
     io.ex_mem.alu_flags <<= alu.flags
+
+    #
+    # The execute stage is responsible for sending the dcache memory requests.
+    #
+
+    io.dcache.cpu_req.valid <<= \
+        io.id_ex.ctrl.valid & \
+        (io.id_ex.ctrl.mem.mem_read | io.id_ex.ctrl.mem.mem_write)
+
+    io.dcache.cpu_req.addr <<= alu.result
+    io.dcache.cpu_req.rtype <<= access_rtype.d
+    io.dcache.cpu_req.read <<= io.id_ex.ctrl.mem.mem_read
 
     NameSignals(locals())

@@ -29,16 +29,16 @@ VFLAGS= \
 	--exe $(abspath ./$(TBSRC)) \
 	-o $(abspath ./$(VSIM))
 
-default: $(VSIM) app
+default: $(VSIM) apps
 
-.PHONY: build-dirs clean app
+.PHONY: build-dirs clean apps
 
 build-dirs:
 	@mkdir -p $(BUILDDIR)
 	@mkdir -p $(VGENDIR)
 
-app:
-	$(MAKE) -C app/
+apps:
+	$(MAKE) -C apps/
 
 $(VSRC): $(RTLSRC) | build-dirs
 	$(PYTHON) build.py

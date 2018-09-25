@@ -42,6 +42,8 @@ def Control(inst, itype, ctrl):
 
     ctrl.ex.alu_src <<= 0
     ctrl.ex.alu_op <<= 0
+    ctrl.ex.lui <<= False
+    ctrl.ex.auipc <<= False
     ctrl.ex.funct3 <<= funct3
     ctrl.ex.funct7 <<= funct7
 

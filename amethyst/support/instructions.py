@@ -69,11 +69,15 @@ class ExCtrl(object):
 
     alu_src : int
     alu_op : int
+    lui : bool = False
+    auipc : bool = False
 
     def Literal(self):
         return {
             'alu_src': self.alu_src,
-            'alu_op': self.alu_op
+            'alu_op': self.alu_op,
+            'lui': self.lui,
+            'auipc': self.auipc
         }
 
 @dataclass(frozen=True)
@@ -222,7 +226,7 @@ instructions = {
     # U-Type Instructions
     #
 
-    'lui': Inst.U(Pattern(Opcodes.LUI, None, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, False), WbCtrl.Reg()),
+    'lui': Inst.U(Pattern(Opcodes.LUI, None, None), ExCtrl(AluSrc.RS2, 0b00, True), MemCtrl.Nop(), WbCtrl.Reg()),
 
     #
     # J-Type Instructions
