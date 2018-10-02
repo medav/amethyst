@@ -7,11 +7,12 @@
 
 #include "VAmethyst.h"
 
-#define MEMSIZE 0x20000
+#define MEMSIZE (uint64_t)0x20000
 
 #define ASSERT(condition) \
     if (!(condition)) { \
         fprintf(stderr, "[%s:%d] Assertion failure: " # condition "\n", __FILE__, __LINE__); \
+        return; \
     }
 
 uint64_t simtime = 0;
@@ -35,7 +36,7 @@ void HandleIMem(VAmethyst * top, uint8_t * mem) {
         ReadResponse resp;
         resp.addr = top->io_imem_read_addr;
 
-        ASSERT(resp.addr < MEMSIZE - 64)
+        ASSERT(resp.addr < (MEMSIZE - 64))
         // ASSERT(resp.addr & 0x3F == 0)
 
         memcpy(resp.data, mem + resp.addr, 64);
@@ -62,7 +63,9 @@ void HandleDMem(VAmethyst * top, uint8_t * mem) {
         ReadResponse resp;
         resp.addr = top->io_dmem_read_addr;
 
-        ASSERT(resp.addr < MEMSIZE - 64)
+        std::cerr << std::hex << resp.addr << std::dec << std::endl;
+
+        ASSERT(resp.addr < (MEMSIZE - 64))
         // ASSERT(resp.addr & 0x3F == 0)
 
         memcpy(resp.data, mem + resp.addr, 64);
@@ -79,7 +82,17 @@ void HandleDMem(VAmethyst * top, uint8_t * mem) {
         dqueue.pop();
     }
 
-    top->io_dmem_write_ready = false;
+    top->io_dmem_write_ready = true;
+
+    if (top->io_dmem_write_valid) {
+        memcpy(mem + top->io_dmem_write_addr, top->io_dmem_write_data, 64);
+    }
+}
+
+void HandlePcLog(VAmethyst * top) {
+    if (top->io_debug_pc_trigger) {
+        printf("0x%08lx 0x%08x DASM(0x%08x)\n", top->io_debug_pc_trace, top->io_debug_pc_inst, top->io_debug_pc_inst);
+    }
 }
 
 int main(int argc, char **argv) {
@@ -120,6 +133,8 @@ int main(int argc, char **argv) {
 
         top->eval();
         vcd->dump(simtime++);
+
+        HandlePcLog(top);
 
         top->io_clock = 1;
 

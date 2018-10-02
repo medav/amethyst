@@ -50,8 +50,8 @@ def Frontend():
         if2_pc <<= if1_pc
         if2_valid <<= ~io.mispred.valid
 
-    btb.cur_pc <<= pc
-    bpred.cur_pc <<= pc
+    btb.cur_pc <<= next_pc
+    bpred.cur_pc <<= next_pc
 
     #
     # Misprediction Update Handling

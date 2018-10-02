@@ -205,6 +205,7 @@ def Cache(CC : CacheConfig):
             meta_array.update.valid <<= True
             data_array.update.valid <<= True
             miss_state <<= mstates.idle
+            s1_req <<= cpu_cache_req_reset
 
     NameSignals(locals())
 

@@ -210,3 +210,9 @@ ras_ctrl_bundle = {
     'pop': Bits(1),
     'pc': Bits(C['paddr-width'])
 }
+
+debug_bundle = {
+    'pc_trigger': Bits(1),
+    'pc_trace': Bits(64),
+    'pc_inst': Bits(32)
+}

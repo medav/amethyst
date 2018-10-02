@@ -19,7 +19,13 @@ def BranchUnit():
 
     mispred.valid <<= False
 
-    with (io.branch.target != io.ex_pc) & io.branch.valid:
+    #
+    # N.B. It'll never be the case that back to back mispredictions are
+    # consumed since the following instruction (branch or not) is to be
+    # flushed.
+    #
+
+    with (io.branch.target != io.ex_pc) & io.branch.valid & ~mispred.valid:
         mispred.valid <<= True
         mispred.pc <<= io.mem_pc
         mispred.target <<= io.branch.target

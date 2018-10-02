@@ -165,25 +165,10 @@ def RegisterFile():
         'r1_data': Output(Bits(C['core-width']))
     })
 
-    #
-    # For now the register file is an array of registers. This is implemented
-    # as a "list" signal in Atlas. When compiled to Verilog, the registers
-    # become separate signals and likely if ever synthesized will become
-    # regular HW registers.
-    #
-    # In the future, this register file should be revised to be implemented by
-    # an SRAM structure instead of an array of registers so it takes up less
-    # area / transistors / etc...
-    #
-    # N.B. Technically, x0 doesn't need a register since it should just be read
-    # as zero. It's still instantiated here to make it easy to just index into
-    # a list signal for reads. Most synthesis tools are smart enough to remove
-    # signals that are unused like this.
-    #
+    r0_data = Wire(Bits(C['core-width']))
+    r1_data = Wire(Bits(C['core-width']))
 
-    reg_array = Reg(
-        [Bits(C['core-width']) for _ in range(C['reg-count'])],
-        reset_value=[0 for _ in range(C['reg-count'])])
+    reg_mem = Mem(C['core-width'], C['reg-count'])
 
     #
     # Handle the two read ports. If the read address is 0, always read 0.
@@ -192,12 +177,18 @@ def RegisterFile():
     with io.r0_addr == 0:
         io.r0_data <<= 0
     with otherwise:
-        io.r0_data <<= reg_array[io.r0_addr]
+        with io.r0_addr == io.w0_addr:
+            io.r0_data <<= io.w0_data
+        with otherwise:
+            io.r0_data <<= reg_array[io.r0_addr]
 
     with io.r1_addr == 0:
         io.r1_data <<= 0
     with otherwise:
-        io.r1_data <<= reg_array[io.r1_addr]
+        with io.r1_addr == io.w0_addr:
+            io.r1_data <<= io.w0_data
+        with otherwise:
+            io.r1_data <<= reg_array[io.r1_addr]
 
     #
     # Register writes to x0 are ignored since that register must always read as

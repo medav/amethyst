@@ -4,3 +4,5 @@
 _init:
     li    sp, 0x00002000
     j main
+loop:
+    j loop

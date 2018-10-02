@@ -15,7 +15,8 @@ from .management.branch import BranchUnit
 def Amethyst():
     io = Io({
         'imem': Output(mem_bundle),
-        'dmem': Output(mem_bundle)
+        'dmem': Output(mem_bundle),
+        'debug': Output(debug_bundle)
     })
 
     #
@@ -135,5 +136,13 @@ def Amethyst():
 
     writeback_stage.mem_wb <<= mem_wb_reg
     writeback_stage.mem_read_data <<= dcache.cpu_resp.data
+
+    #
+    # Debug Signals
+    #
+
+    io.debug.pc_trigger <<= mem_wb_reg.ctrl.valid
+    io.debug.pc_trace <<= mem_wb_reg.ctrl.pc
+    io.debug.pc_inst <<= mem_wb_reg.ctrl.inst
 
     NameSignals(locals())

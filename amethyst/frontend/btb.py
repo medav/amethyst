@@ -39,6 +39,9 @@ def BranchTargetBuffer():
     tag_match = Wire(Bits(1))
     table = Mem(entry_size, btb_size)
 
+    last_pc = Reg(Bits(C['paddr-width']))
+    last_pc <<= io.cur_pc
+
     #
     # Each entry in the BTB has the following layout:
     #
@@ -58,7 +61,7 @@ def BranchTargetBuffer():
     read_entry <<= table.Read(table_index)
     valid_reg <<= valid_bits[table_index]
 
-    tag_match <<= Tag(read_entry) == io.cur_pc(C['paddr-width'] - 1, hash_bits)
+    tag_match <<= Tag(read_entry) == last_pc(C['paddr-width'] - 1, hash_bits)
 
     #
     # The prediction is only valid when the read tag matches _and_ the entry is

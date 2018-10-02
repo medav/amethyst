@@ -186,13 +186,13 @@ instructions = {
     # I-Type Instructions
     #
 
-    'lb': Inst.I(Pattern(Opcodes.LOAD, 0b000, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lh': Inst.I(Pattern(Opcodes.LOAD, 0b001, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lw': Inst.I(Pattern(Opcodes.LOAD, 0b010, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'ld': Inst.I(Pattern(Opcodes.LOAD, 0b011, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lbu': Inst.I(Pattern(Opcodes.LOAD, 0b100, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lhu': Inst.I(Pattern(Opcodes.LOAD, 0b101, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lwu': Inst.I(Pattern(Opcodes.LOAD, 0b110, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
+    'lb': Inst.I(Pattern(Opcodes.LOAD, 0b000, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
+    'lh': Inst.I(Pattern(Opcodes.LOAD, 0b001, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
+    'lw': Inst.I(Pattern(Opcodes.LOAD, 0b010, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
+    'ld': Inst.I(Pattern(Opcodes.LOAD, 0b011, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
+    'lbu': Inst.I(Pattern(Opcodes.LOAD, 0b100, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
+    'lhu': Inst.I(Pattern(Opcodes.LOAD, 0b101, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
+    'lwu': Inst.I(Pattern(Opcodes.LOAD, 0b110, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
     'addi': Inst.I(Pattern(Opcodes.OPIMM, 0b000, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
     'slli': Inst.I(Pattern(Opcodes.OPIMM, 0b001, 0b0000000), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
     'xori': Inst.I(Pattern(Opcodes.OPIMM, 0b100, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
@@ -200,7 +200,7 @@ instructions = {
     'srai': Inst.I(Pattern(Opcodes.OPIMM, 0b101, 0b0100000), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
     'ori': Inst.I(Pattern(Opcodes.OPIMM, 0b110, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
     'andi': Inst.I(Pattern(Opcodes.OPIMM, 0b111, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'jalr': Inst.I(Pattern(Opcodes.JALR, 0b000, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
+    'jalr': Inst.I(Pattern(Opcodes.JALR, 0b000, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(True, False, False), WbCtrl.Reg()),
 
     #
     # S-Type Instructions
