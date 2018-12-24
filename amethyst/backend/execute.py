@@ -133,6 +133,8 @@ def ExecuteStage():
 
     io = Io({
         'id_ex': Input(id_ex_bundle),
+        'rs1_data': Input(Bits(C['core-width'])),
+        'rs2_data': Input(Bits(C['core-width'])),
         'fwd': Input({
             'select1': Bits(forward.fwd.bitwidth),
             'select2': Bits(forward.fwd.bitwidth),
@@ -162,7 +164,7 @@ def ExecuteStage():
     rs1_fwd = Wire(Bits(C['core-width']))
     rs2_fwd = Wire(Bits(C['core-width']))
 
-    rs1_fwd <<= io.id_ex.rs1_data
+    rs1_fwd <<= io.rs1_data
 
     with io.fwd.select1 == forward.fwd.mem:
         rs1_fwd <<= io.fwd.mem_data
@@ -170,7 +172,7 @@ def ExecuteStage():
     with io.fwd.select1 == forward.fwd.wb:
         rs1_fwd <<= io.fwd.wb_data
 
-    rs2_fwd <<= io.id_ex.rs1_data
+    rs2_fwd <<= io.rs2_data
 
     with io.fwd.select2 == forward.fwd.mem:
         rs2_fwd <<= io.fwd.mem_data
@@ -203,7 +205,7 @@ def ExecuteStage():
     # Data Output Connections
     #
 
-    io.ex_mem.rs2_data <<= io.id_ex.rs2_data
+    io.ex_mem.rs2_data <<= io.rs2_data
 
     with io.id_ex.ctrl.ex.lui:
         io.ex_mem.alu_result <<= io.id_ex.imm

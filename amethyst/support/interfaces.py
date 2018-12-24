@@ -147,15 +147,11 @@ if_id_bundle_reset = {
 
 id_ex_bundle = {
     'ctrl': ctrl_bundle,
-    'rs1_data': Bits(C['core-width']),
-    'rs2_data': Bits(C['core-width']),
     'imm': Bits(C['core-width'])
 }
 
 id_ex_bundle_reset = {
     'ctrl': ctrl_bundle_reset,
-    'rs1_data': 0,
-    'rs2_data': 0,
     'imm': 0
 }
 

@@ -180,7 +180,7 @@ def RegisterFile():
         with io.r0_addr == io.w0_addr:
             io.r0_data <<= io.w0_data
         with otherwise:
-            io.r0_data <<= reg_array[io.r0_addr]
+            io.r0_data <<= reg_mem.Read(io.r0_addr)
 
     with io.r1_addr == 0:
         io.r1_data <<= 0
@@ -188,15 +188,14 @@ def RegisterFile():
         with io.r1_addr == io.w0_addr:
             io.r1_data <<= io.w0_data
         with otherwise:
-            io.r1_data <<= reg_array[io.r1_addr]
+            io.r1_data <<= reg_mem.Read(io.r1_addr)
 
     #
     # Register writes to x0 are ignored since that register must always read as
     # zero.
     #
 
-    with (io.w0_addr != 0) & io.w0_en:
-        reg_array[io.w0_addr] <<= io.w0_data
+    reg_mem.Write(io.w0_addr, io.w0_data, (io.w0_addr != 0) & io.w0_en)
 
     NameSignals(locals())
 
@@ -232,7 +231,9 @@ def DecodeStage():
         'inst': Input(Bits(32)),
         'reg_write': Input(reg_write_bundle),
         'ras_ctrl': Output(ras_ctrl_bundle),
-        'id_ex': Output(id_ex_bundle)
+        'id_ex': Output(id_ex_bundle),
+        'rs1_data': Output(Bits(C['core-width'])),
+        'rs2_data': Output(Bits(C['core-width'])),
     })
 
     inst = Wire(Bits(32))
@@ -267,8 +268,8 @@ def DecodeStage():
     # Hook up the register read outputs.
     #
 
-    io.id_ex.rs1_data <<= regfile.r0_data
-    io.id_ex.rs2_data <<= regfile.r1_data
+    io.rs1_data <<= regfile.r0_data
+    io.rs2_data <<= regfile.r1_data
 
     #
     # Control is a Python function that produces the primary decode logic. It

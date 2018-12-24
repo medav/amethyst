@@ -105,6 +105,8 @@ def Amethyst():
     #
 
     execute_stage.id_ex <<= id_ex_reg
+    execute_stage.rs1_data <<= idecode_stage.rs1_data
+    execute_stage.rs2_data <<= idecode_stage.rs2_data
 
     with bru.mispred.valid:
         ex_mem_reg <<= ex_mem_bundle_reset
