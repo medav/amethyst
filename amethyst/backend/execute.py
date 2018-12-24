@@ -16,17 +16,6 @@ def ArithmeticLogicUnit():
         'flags': Output(alu_flags)
     })
 
-    zero = Wire(Bits(C['core-width']))
-    shift_op = Wire(Bits(1))
-
-    #
-    # To make checking for overflow easy, all arithmetic operations are
-    # performed on 2 x core-width (sign extended) data.
-    #
-
-    op0_ex = Cat([zero, io.op0])
-    op1_ex = Cat([zero, io.op1])
-
     #
     # N.B. For all RV32I instructions, the shamt is actually only 5 bits. For
     # 64 bit instructions, it's 6 bits. It's safe to always extract a 6-bit
@@ -41,21 +30,21 @@ def ArithmeticLogicUnit():
     # a single adder, negating the second operand for subtractions.
     #
 
-    and_result = op0_ex & op1_ex
-    or_result = op0_ex | op1_ex
-    add_result = op0_ex + op1_ex
-    sub_result = op0_ex - op1_ex
+    and_result = io.op0 & io.op1
+    or_result = io.op0 | io.op1
+    add_result = io.op0 + io.op1
+    sub_result = io.op0 - io.op1
     sll_result = io.op0 << shamt
     srl_result = io.op0 >> shamt
 
-    result = Wire(Bits(C['core-width'] * 2))
-    io.result <<= result(C['core-width'] - 1, 0)
+    result = Wire(Bits(C['core-width']))
+    io.result <<= result
 
     result <<= 0
 
     io.flags.zero <<= (result == 0)
-    io.flags.sign <<= result(result.width - 1, result.width - 1)
-    io.flags.overflow <<= BitOrReduce(result(result.width - 1, C['core-width']))
+    io.flags.sign <<= result(C['core-width'] - 1, C['core-width'] - 1)
+    io.flags.overflow <<= add_result(C['core-width'], C['core-width'])
 
     #
     # The following essentially produces a mux that selects an output produced
@@ -69,16 +58,16 @@ def ArithmeticLogicUnit():
         result <<= or_result
 
     with io.alu_inst == AluInsts.ADD:
-        result <<= add_result
+        result <<= add_result(C['core-width'] - 1, 0)
 
     with io.alu_inst == AluInsts.SUB:
         result <<= sub_result
 
     with io.alu_inst == AluInsts.SLL:
-        result <<= Cat([zero, sll_result])
+        result <<= sll_result
 
     with io.alu_inst == AluInsts.SRL:
-        result <<= Cat([zero, srl_result])
+        result <<= srl_result
 
     NameSignals(locals())
 
