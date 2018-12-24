@@ -108,11 +108,10 @@ def Amethyst():
     execute_stage.rs1_data <<= idecode_stage.rs1_data
     execute_stage.rs2_data <<= idecode_stage.rs2_data
 
-    with bru.mispred.valid:
+    with bru.mispred.valid | dcache.miss_stall:
         ex_mem_reg <<= ex_mem_bundle_reset
     with otherwise:
-        with ~dcache.miss_stall:
-            ex_mem_reg <<= execute_stage.ex_mem
+        ex_mem_reg <<= execute_stage.ex_mem
 
     dcache.cpu_req <<= execute_stage.dcache.cpu_req
 
