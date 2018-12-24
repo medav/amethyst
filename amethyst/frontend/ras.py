@@ -23,7 +23,7 @@ def ReturnAddressStack():
     write_address = Wire(Bits(ras_index_width))
 
     top_address <<= push_address - 1
-
+    pc_plus_4 = io.ctrl.pc + 4
 
     with io.ctrl.push & io.ctrl.pop:
         write_address <<= top_address
@@ -37,7 +37,7 @@ def ReturnAddressStack():
         with io.ctrl.pop:
             push_address <<= push_address - 1
 
-    rstack.Write(write_address, io.ctrl.pc + 4, io.ctrl.push)
+    rstack.Write(write_address, pc_plus_4(C['core-width'] - 1, 0), io.ctrl.push)
     io.top <<= rstack.Read(top_address)
 
     NameSignals(locals())
