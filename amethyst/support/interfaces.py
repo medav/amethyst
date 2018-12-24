@@ -131,6 +131,12 @@ reg_write_bundle = {
     'w_data': Bits(C['core-width'])
 }
 
+reg_write_bundle_reset = {
+    'w_addr': 0,
+    'w_en': False,
+    'w_data': 0
+}
+
 #
 # Pipeline stage bundles
 #

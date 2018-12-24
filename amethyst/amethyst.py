@@ -98,7 +98,10 @@ def Amethyst():
         with ~dcache.miss_stall:
             id_ex_reg <<= idecode_stage.id_ex
 
-    idecode_stage.reg_write <<= writeback_stage.reg_write
+    with ~dcache.miss_stall:
+        idecode_stage.reg_write <<= writeback_stage.reg_write
+    with otherwise:
+        idecode_stage.reg_write <<= reg_write_bundle_reset
 
     #
     # B2: Execute Stage
@@ -108,12 +111,16 @@ def Amethyst():
     execute_stage.rs1_data <<= idecode_stage.rs1_data
     execute_stage.rs2_data <<= idecode_stage.rs2_data
 
-    with bru.mispred.valid | dcache.miss_stall:
+    with bru.mispred.valid:
         ex_mem_reg <<= ex_mem_bundle_reset
     with otherwise:
-        ex_mem_reg <<= execute_stage.ex_mem
+        with ~dcache.miss_stall:
+            ex_mem_reg <<= execute_stage.ex_mem
 
-    dcache.cpu_req <<= execute_stage.dcache.cpu_req
+    with dcache.miss_stall:
+        dcache.cpu_req <<= cpu_cache_req_reset
+    with otherwise:
+        dcache.cpu_req <<= execute_stage.dcache.cpu_req
 
     execute_stage.fwd.select1 <<= fwd.fwd1_select
     execute_stage.fwd.select2 <<= fwd.fwd2_select
@@ -126,10 +133,11 @@ def Amethyst():
 
     mem_stage.ex_mem <<= ex_mem_reg
 
-    with bru.mispred.valid | dcache.miss_stall:
+    with bru.mispred.valid:
         mem_wb_reg <<= mem_wb_bundle_reset
     with otherwise:
-        mem_wb_reg <<= mem_stage.mem_wb
+        with ~dcache.miss_stall:
+            mem_wb_reg <<= mem_stage.mem_wb
 
     #
     # B4: Writeback Stage
