@@ -116,12 +116,12 @@ int main(int argc, char **argv) {
         top->io_clock = 0;
 
         top->eval();
-        vcd->dump(simtime++);
+        vcd->dump((vluint64_t)simtime++);
 
         top->io_clock = 1;
 
         top->eval();
-        vcd->dump(simtime++);
+        vcd->dump((vluint64_t)simtime++);
     }
 
     top->io_reset = 0;
@@ -132,14 +132,14 @@ int main(int argc, char **argv) {
         HandleDMem(top, mem);
 
         top->eval();
-        vcd->dump(simtime++);
+        vcd->dump((vluint64_t)simtime++);
 
         HandlePcLog(top);
 
         top->io_clock = 1;
 
         top->eval();
-        vcd->dump(simtime++);
+        vcd->dump((vluint64_t)simtime++);
     }
 
     vcd->close();
