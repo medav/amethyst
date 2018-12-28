@@ -37,7 +37,6 @@ void HandleIMem(VAmethyst * top, uint8_t * mem) {
         resp.addr = top->io_imem_read_addr & ~0x3F;
 
         ASSERT(resp.addr < (MEMSIZE - 64))
-        // ASSERT(resp.addr & 0x3F == 0)
 
         memcpy(resp.data, mem + resp.addr, 64);
         iqueue.push(resp);
@@ -64,7 +63,6 @@ void HandleDMem(VAmethyst * top, uint8_t * mem) {
         resp.addr = top->io_dmem_read_addr & ~0x3F;
 
         ASSERT(resp.addr < (MEMSIZE - 64))
-        // ASSERT(resp.addr & 0x3F == 0)
 
         memcpy(resp.data, mem + resp.addr, 64);
         dqueue.push(resp);
