@@ -9,7 +9,7 @@ TOP=Amethyst
 BUILDDIR=build
 VGENDIR=$(BUILDDIR)/verilator-gen
 
-RTLSRC=$(wildcard rtl/*.py)
+RTLSRC=$(shell find amethyst -path '*.py')
 VSRC=$(BUILDDIR)/amethyst.v
 TBSRC=tb/amethyst.cc
 VSIM=build/amethyst
