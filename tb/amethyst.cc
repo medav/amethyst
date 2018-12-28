@@ -34,7 +34,7 @@ void HandleIMem(VAmethyst * top, uint8_t * mem) {
 
     if (top->io_imem_read_valid) {
         ReadResponse resp;
-        resp.addr = top->io_imem_read_addr;
+        resp.addr = top->io_imem_read_addr & ~0x3F;
 
         ASSERT(resp.addr < (MEMSIZE - 64))
         // ASSERT(resp.addr & 0x3F == 0)
@@ -61,9 +61,7 @@ void HandleDMem(VAmethyst * top, uint8_t * mem) {
 
     if (top->io_dmem_read_valid) {
         ReadResponse resp;
-        resp.addr = top->io_dmem_read_addr;
-
-        std::cerr << std::hex << resp.addr << std::dec << std::endl;
+        resp.addr = top->io_dmem_read_addr & ~0x3F;
 
         ASSERT(resp.addr < (MEMSIZE - 64))
         // ASSERT(resp.addr & 0x3F == 0)
