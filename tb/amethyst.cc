@@ -6,6 +6,7 @@
 #include <verilated_vcd_c.h>
 
 #include "VAmethyst.h"
+#include "VAmethyst_Amethyst.h"
 
 #define MEMSIZE (uint64_t)0x20000
 
@@ -91,8 +92,56 @@ void HandlePcLog(VAmethyst * top) {
     }
 }
 
+void Separator() {
+    printf("|");
+}
+
+void PrintStage(uint8_t valid, uint64_t pc) {
+    if (valid) {
+        printf(" %08x ", (uint32_t)pc);
+    }
+    else {
+        printf(" -------- ");
+    }
+}
+
+void PrintIf(uint8_t valid, char ch) {
+    if (valid) {
+        printf("%c", ch);
+    }
+    else {
+        printf(" ");
+    }
+}
+
+void HandleProbes(VAmethyst * top) {
+    // cycle, if1, if2, if3, id, ex, mem, wb
+    printf("%08llu ", simtime / 2);
+    Separator();
+    PrintStage(1, top->Amethyst->probe_if1_pc);
+    Separator();
+    PrintStage(top->Amethyst->probe_if2_valid, top->Amethyst->probe_if2_pc);
+    Separator();
+    PrintStage(top->Amethyst->probe_if3_valid, top->Amethyst->probe_if3_pc);
+    Separator();
+    PrintStage(top->Amethyst->probe_id_valid, top->Amethyst->probe_id_pc);
+    Separator();
+    PrintStage(top->Amethyst->probe_ex_valid, top->Amethyst->probe_ex_pc);
+    Separator();
+    PrintStage(top->Amethyst->probe_mem_valid, top->Amethyst->probe_mem_pc);
+    Separator();
+    PrintStage(top->Amethyst->probe_wb_valid, top->Amethyst->probe_wb_pc);
+    Separator();
+    printf(" ");
+    PrintIf(top->Amethyst->probe_icache_stall, 'I');
+    PrintIf(top->Amethyst->probe_dcache_stall, 'D');
+    printf("\n");
+}
+
 int main(int argc, char **argv) {
     Verilated::traceEverOn(true);
+
+    printf(" cycle   | ifetch1  | ifetch2  | ifetch3  |  decode  | execute  |   mem    |    wb    |\n");
 
     uint8_t * mem = new uint8_t[MEMSIZE];
 
@@ -130,7 +179,7 @@ int main(int argc, char **argv) {
         top->eval();
         vcd->dump((vluint64_t)simtime++);
 
-        HandlePcLog(top);
+        HandleProbes(top);
 
         top->io_clock = 1;
 

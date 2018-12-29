@@ -104,3 +104,38 @@ class ValidSetOperator(Operator):
 @OpGen(cacheable=False)
 def ValidSet(width : int):
     return ValidSetOperator(width)
+
+class ProbeOperator(Operator):
+    """Operator that produces a verilog signal for probing.
+
+    The resulting signal will be marked as verilator public
+    """
+
+    def __init__(self, bits, probe_name=None):
+        super().__init__(override_name='probe')
+        self.bits = FilterFrontend(bits)
+        self.probe_name = probe_name
+        self.probe = CreateSignal(
+            bits.meta.typespec,
+            name=None,
+            parent=self,
+            frontend=False)
+
+    def Declare(self):
+        if self.probe_name is not None:
+            self.probe.meta.name = self.probe_name
+        else:
+            self.probe.meta.name = self.bits.meta.name
+
+        width_str = \
+            f'[{self.probe.width - 1} : 0]' if self.probe.width > 1 else ''
+
+        VEmitRaw(
+            f'wire {width_str} {VName(self.probe)} /* verilator public */;')
+
+    def Synthesize(self):
+        VAssign(self.probe, self.bits)
+
+@OpGen(cacheable=False)
+def Probe(bits, name=None):
+    return ProbeOperator(bits, probe_name=name)

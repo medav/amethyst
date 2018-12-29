@@ -141,12 +141,12 @@ reg_write_bundle_reset = {
 # Pipeline stage bundles
 #
 
-if_id_bundle = {
+if_bundle = {
     'valid': Bits(1),
     'pc': Bits(C['paddr-width'])
 }
 
-if_id_bundle_reset = {
+if_bundle_reset = {
     'valid': False,
     'pc': 0
 }

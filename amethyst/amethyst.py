@@ -1,7 +1,9 @@
+from dataclasses import dataclass
+
 from atlas import *
 from .support import *
 
-from .frontend.frontend import Frontend
+from .frontend.ifetch import IFetchStage
 from .cache.cache import Cache, CacheConfig
 from .backend.decode import DecodeStage
 from .backend.execute import ExecuteStage
@@ -11,6 +13,24 @@ from .management.forward import ForwardUnit
 from .management.hazard import HazardUnit
 from .management.branch import BranchUnit
 
+def PipelineUpdate(pipe_reg, next_value, flush_signal, reset_value, stall_signal):
+    def HandleStall(pipe_reg):
+        if stall_signal is not None:
+            with ~stall_signal:
+                pipe_reg <<= next_value
+
+        else:
+            pipe_reg <<= next_value
+
+    if flush_signal is not None:
+        with flush_signal:
+            pipe_reg <<= reset_value
+        with otherwise:
+            HandleStall(pipe_reg)
+
+    else:
+        HandleStall(pipe_reg)
+
 @Module
 def Amethyst():
     io = Io({
@@ -18,6 +38,8 @@ def Amethyst():
         'dmem': Output(mem_bundle),
         'debug': Output(debug_bundle)
     })
+
+    pc = Reg(Bits(C['paddr-width']), reset_value=C['reset-addr'])
 
     #
     # Instruction and Data Caches
@@ -33,7 +55,7 @@ def Amethyst():
     # Pipeline Stages
     #
 
-    frontend = Instance(Frontend())
+    ifetch_stage = Instance(IFetchStage())
     idecode_stage = Instance(DecodeStage())
     execute_stage = Instance(ExecuteStage())
     mem_stage = Instance(MemStage())
@@ -43,10 +65,32 @@ def Amethyst():
     # Pipeline Registers
     #
 
-    if_id_reg = Reg(if_id_bundle, reset_value=if_id_bundle_reset)
+    if1_if2_reg = Reg(if_bundle, reset_value=if_bundle_reset)
+    if2_if3_reg = Reg(if_bundle, reset_value=if_bundle_reset)
+    if_id_reg = Reg(if_bundle, reset_value=if_bundle_reset)
     id_ex_reg = Reg(id_ex_bundle, reset_value=id_ex_bundle_reset)
     ex_mem_reg = Reg(ex_mem_bundle, reset_value=ex_mem_bundle_reset)
     mem_wb_reg = Reg(mem_wb_bundle, reset_value=mem_wb_bundle_reset)
+
+    #
+    # Probes
+    #
+
+    Probe(pc, 'if1_pc')
+    Probe(if1_if2_reg.valid, 'if2_valid')
+    Probe(if1_if2_reg.pc, 'if2_pc')
+    Probe(if2_if3_reg.valid, 'if3_valid')
+    Probe(if2_if3_reg.pc, 'if3_pc')
+    Probe(if_id_reg.valid, 'id_valid')
+    Probe(if_id_reg.pc, 'id_pc')
+    Probe(id_ex_reg.ctrl.valid, 'ex_valid')
+    Probe(id_ex_reg.ctrl.pc, 'ex_pc')
+    Probe(ex_mem_reg.ctrl.valid, 'mem_valid')
+    Probe(ex_mem_reg.ctrl.pc, 'mem_pc')
+    Probe(mem_wb_reg.ctrl.valid, 'wb_valid')
+    Probe(mem_wb_reg.ctrl.pc, 'wb_pc')
+    Probe(icache.miss_stall, 'icache_stall')
+    Probe(dcache.miss_stall, 'dcache_stall')
 
     #
     # Forward, Hazard, and Branch Units
@@ -72,36 +116,81 @@ def Amethyst():
     bru.branch <<= mem_stage.branch
 
     #
-    # F1, F2, F3: Frontend
+    # IF1: IFetch 1
     #
 
-    icache.cpu_req <<= frontend.icache.cpu_req
-    icache.cpu_stall <<= frontend.icache.cpu_stall
-    frontend.icache.miss_stall <<= icache.miss_stall
-    frontend.icache.cpu_resp <<= icache.cpu_resp
-    frontend.mispred <<= bru.mispred
-    frontend.frontend_stall <<= dcache.miss_stall
+    ifetch_stage.pc <<= pc
+    ifetch_stage.mispred <<= bru.mispred
 
-    with ~dcache.miss_stall:
-        if_id_reg <<= frontend.if_id
+    PipelineUpdate(
+        if1_if2_reg,
+        ifetch_stage.if1_if2,
+        bru.mispred.valid,
+        if_bundle_reset,
+        dcache.miss_stall | icache.miss_stall)
+
+    PipelineUpdate(
+        pc,
+        ifetch_stage.next_pc,
+        None,
+        None,
+        dcache.miss_stall | icache.miss_stall)
+
+    #
+    # IF2: IFetch 2
+    #
+
+    icache.cpu_stall <<= dcache.miss_stall
+
+    icache.cpu_req <<= {
+        'valid': if1_if2_reg.valid,
+        'addr': if1_if2_reg.pc,
+        'rtype': access_rtype.w,
+        'read': True
+    }
+
+    next_if2_if3 = {
+        'valid': if1_if2_reg.valid & ~icache.miss_stall,
+        'pc': if1_if2_reg.pc
+    }
+
+    PipelineUpdate(
+        if2_if3_reg,
+        next_if2_if3,
+        bru.mispred.valid,
+        if_bundle_reset,
+        dcache.miss_stall | icache.miss_stall)
+
+    #
+    # IF3: IFetch 3
+    #
+
+    next_if_id = {
+        'valid': if2_if3_reg.valid & ~icache.miss_stall,
+        'pc': if2_if3_reg.pc
+    }
+
+    PipelineUpdate(
+        if_id_reg,
+        next_if_id,
+        bru.mispred.valid,
+        if_bundle_reset,
+        dcache.miss_stall)
 
     #
     # B1: Decode Stage
     #
 
     idecode_stage.if_id <<= if_id_reg
-    idecode_stage.inst <<= frontend.inst
+    idecode_stage.inst <<= icache.cpu_resp.data(31, 0)
+    idecode_stage.reg_write <<= reg_write_bundle_reset
 
-    with bru.mispred.valid:
-        id_ex_reg <<= id_ex_bundle_reset
-    with otherwise:
-        with ~dcache.miss_stall:
-            id_ex_reg <<= idecode_stage.id_ex
-
-    with ~dcache.miss_stall:
-        idecode_stage.reg_write <<= writeback_stage.reg_write
-    with otherwise:
-        idecode_stage.reg_write <<= reg_write_bundle_reset
+    PipelineUpdate(
+        id_ex_reg,
+        idecode_stage.id_ex,
+        bru.mispred.valid,
+        id_ex_bundle_reset,
+        dcache.miss_stall)
 
     #
     # B2: Execute Stage
@@ -110,22 +199,19 @@ def Amethyst():
     execute_stage.id_ex <<= id_ex_reg
     execute_stage.rs1_data <<= idecode_stage.rs1_data
     execute_stage.rs2_data <<= idecode_stage.rs2_data
-
-    with bru.mispred.valid:
-        ex_mem_reg <<= ex_mem_bundle_reset
-    with otherwise:
-        with ~dcache.miss_stall:
-            ex_mem_reg <<= execute_stage.ex_mem
-
-    with dcache.miss_stall:
-        dcache.cpu_req <<= cpu_cache_req_reset
-    with otherwise:
-        dcache.cpu_req <<= execute_stage.dcache.cpu_req
-
     execute_stage.fwd.select1 <<= fwd.fwd1_select
     execute_stage.fwd.select2 <<= fwd.fwd2_select
     execute_stage.fwd.mem_data <<= ex_mem_reg.alu_result
     execute_stage.fwd.wb_data <<= writeback_stage.reg_write.w_data
+
+    dcache.cpu_req <<= execute_stage.dcache.cpu_req
+
+    PipelineUpdate(
+        ex_mem_reg,
+        execute_stage.ex_mem,
+        bru.mispred.valid,
+        ex_mem_bundle_reset,
+        dcache.miss_stall)
 
     #
     # B3: Mem Stage
@@ -133,11 +219,19 @@ def Amethyst():
 
     mem_stage.ex_mem <<= ex_mem_reg
 
-    with bru.mispred.valid:
-        mem_wb_reg <<= mem_wb_bundle_reset
+    next_mem_wb = Wire(mem_wb_bundle)
+
+    with dcache.miss_stall:
+        next_mem_wb <<= mem_wb_bundle_reset
     with otherwise:
-        with ~dcache.miss_stall:
-            mem_wb_reg <<= mem_stage.mem_wb
+        next_mem_wb <<= mem_stage.mem_wb
+
+    PipelineUpdate(
+        mem_wb_reg,
+        next_mem_wb,
+        bru.mispred.valid,
+        mem_wb_bundle_reset,
+        None)
 
     #
     # B4: Writeback Stage

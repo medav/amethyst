@@ -227,7 +227,7 @@ def DecodeStage():
     """
 
     io = Io({
-        'if_id': Input(if_id_bundle),
+        'if_id': Input(if_bundle),
         'inst': Input(Bits(32)),
         'reg_write': Input(reg_write_bundle),
         'ras_ctrl': Output(ras_ctrl_bundle),
