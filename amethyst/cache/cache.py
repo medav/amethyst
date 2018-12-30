@@ -67,13 +67,11 @@ def Cache(CC : CacheConfig):
 
     s0_req <<= io.cpu_req
 
-    with stall | io.cpu_stall:
-        meta_array.read.addr <<= s1_req.addr
-        data_array.read.addr <<= s1_req.addr
+    meta_array.stall <<= stall | io.cpu_stall
+    data_array.stall <<= stall | io.cpu_stall
 
-    with otherwise:
-        meta_array.read.addr <<= s0_req.addr
-        data_array.read.addr <<= s0_req.addr
+    meta_array.read.addr <<= s0_req.addr
+    data_array.read.addr <<= s0_req.addr
 
     #
     # Stage 1: Handle Request
@@ -208,6 +206,3 @@ def Cache(CC : CacheConfig):
             s1_req <<= cpu_cache_req_reset
 
     NameSignals(locals())
-
-
-

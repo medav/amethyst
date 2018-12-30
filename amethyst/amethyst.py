@@ -183,7 +183,12 @@ def Amethyst():
 
     idecode_stage.if_id <<= if_id_reg
     idecode_stage.inst <<= icache.cpu_resp.data(31, 0)
-    idecode_stage.reg_write <<= reg_write_bundle_reset
+    idecode_stage.reg_write <<= writeback_stage.reg_write
+    idecode_stage.stall <<= dcache.miss_stall
+
+    Probe(writeback_stage.reg_write.w_en, 'reg_w_en')
+    Probe(writeback_stage.reg_write.w_addr, 'reg_w_addr')
+    Probe(writeback_stage.reg_write.w_data, 'reg_w_data')
 
     PipelineUpdate(
         id_ex_reg,

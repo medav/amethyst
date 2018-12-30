@@ -157,7 +157,9 @@ def RegisterFile():
 
     io = Io({
         'r0_addr': Input(Bits(Log2Ceil(C['reg-count']))),
+        'r0_en' : Input(Bits(1)),
         'r1_addr': Input(Bits(Log2Ceil(C['reg-count']))),
+        'r1_en' : Input(Bits(1)),
         'w0_addr': Input(Bits(Log2Ceil(C['reg-count']))),
         'w0_data': Input(Bits(C['core-width'])),
         'w0_en' : Input(Bits(1)),
@@ -180,7 +182,7 @@ def RegisterFile():
         with io.r0_addr == io.w0_addr:
             io.r0_data <<= io.w0_data
         with otherwise:
-            io.r0_data <<= reg_mem.Read(io.r0_addr)
+            io.r0_data <<= reg_mem.Read(io.r0_addr, io.r0_en)
 
     with io.r1_addr == 0:
         io.r1_data <<= 0
@@ -188,7 +190,7 @@ def RegisterFile():
         with io.r1_addr == io.w0_addr:
             io.r1_data <<= io.w0_data
         with otherwise:
-            io.r1_data <<= reg_mem.Read(io.r1_addr)
+            io.r1_data <<= reg_mem.Read(io.r1_addr, io.r1_en)
 
     #
     # Register writes to x0 are ignored since that register must always read as
@@ -229,6 +231,7 @@ def DecodeStage():
     io = Io({
         'if_id': Input(if_bundle),
         'inst': Input(Bits(32)),
+        'stall': Input(Bits(1)),
         'reg_write': Input(reg_write_bundle),
         'ras_ctrl': Output(ras_ctrl_bundle),
         'id_ex': Output(id_ex_bundle),
@@ -248,7 +251,9 @@ def DecodeStage():
     itype = Wire(Bits(ITypes.bitwidth))
 
     regfile.r0_addr <<= Rs1(inst)
+    regfile.r0_en <<= ~io.stall
     regfile.r1_addr <<= Rs2(inst)
+    regfile.r1_en <<= ~io.stall
 
     regfile.w0_addr <<= io.reg_write.w_addr
     regfile.w0_en <<= io.reg_write.w_en

@@ -7,6 +7,7 @@ def CacheDataArray(CC : CacheConfig):
         'read': Input({
             'addr': Bits(C['paddr-width'])
         }),
+        'stall': Input(Bits(1)),
         'resp': Output([Bits(CC.line_width) for _ in range(CC.num_ways)]),
         'update': Input({
             'valid': Bits(1),
@@ -26,7 +27,7 @@ def CacheDataArray(CC : CacheConfig):
     #
 
     read_data = [
-        data_arrays[way].Read(CC.Set(io.read.addr))
+        data_arrays[way].Read(CC.Set(io.read.addr), ~io.stall)
         for way in range(CC.num_ways)
     ]
 

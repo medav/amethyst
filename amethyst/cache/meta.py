@@ -7,6 +7,7 @@ def CacheMetaArray(CC : CacheConfig):
         'read': Input({
             'addr': Bits(C['paddr-width'])
         }),
+        'stall': Input(Bits(1)),
         'resp': Output({
             'hit': Bits(1),
             'way': Bits(CC.way_addr_width),
@@ -54,7 +55,7 @@ def CacheMetaArray(CC : CacheConfig):
     #
 
     read_data = [
-        meta_arrays[way].Read(CC.Set(io.read.addr))
+        meta_arrays[way].Read(CC.Set(io.read.addr), ~io.stall)
         for way in range(CC.num_ways)
     ]
 
