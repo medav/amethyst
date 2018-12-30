@@ -32,6 +32,6 @@ def WritebackStage():
     # not update a register simply set their rd to zero (which is ignored).
     #
 
-    io.reg_write.w_en <<= io.mem_wb.ctrl.wb.write_reg
+    io.reg_write.w_en <<= io.mem_wb.ctrl.wb.write_reg & io.mem_wb.ctrl.valid
 
     NameSignals(locals())
