@@ -135,6 +135,13 @@ void HandleProbes(VAmethyst * top) {
     printf(" ");
     PrintIf(top->Amethyst->probe_icache_stall, 'I');
     PrintIf(top->Amethyst->probe_dcache_stall, 'D');
+    printf(" ");
+    if (top->Amethyst->probe_reg_w_en) {
+        printf(
+            "Reg: %02d, Data: %lx",
+            top->Amethyst->probe_reg_w_addr,
+            top->Amethyst->probe_reg_w_data);
+    }
     printf("\n");
 }
 
