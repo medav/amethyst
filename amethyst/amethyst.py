@@ -236,7 +236,7 @@ def Amethyst():
         next_mem_wb,
         bru.mispred.valid,
         mem_wb_bundle_reset,
-        None)
+        dcache.miss_stall)
 
     #
     # B4: Writeback Stage

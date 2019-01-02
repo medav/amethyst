@@ -256,7 +256,7 @@ def DecodeStage():
     regfile.r1_en <<= ~io.stall
 
     regfile.w0_addr <<= io.reg_write.w_addr
-    regfile.w0_en <<= io.reg_write.w_en
+    regfile.w0_en <<= io.reg_write.w_en & ~io.stall
     regfile.w0_data <<= io.reg_write.w_data
 
     #
