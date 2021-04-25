@@ -13,7 +13,7 @@
 #define ASSERT(condition) \
     if (!(condition)) { \
         fprintf(stderr, "[%s:%d] Assertion failure: " # condition "\n", __FILE__, __LINE__); \
-        return; \
+        exit(-1); \
     }
 
 uint64_t simtime = 0;
@@ -96,12 +96,12 @@ void Separator() {
     printf("|");
 }
 
-void PrintStage(uint8_t valid, uint64_t pc) {
+void PrintStage(uint8_t valid, uint64_t pc, uint64_t inst) {
     if (valid) {
-        printf(" %08x ", (uint32_t)pc);
+        printf(" %04x(%08x) ", (uint32_t)pc, (uint32_t)inst);
     }
     else {
-        printf(" -------- ");
+        printf(" -------------- ");
     }
 }
 
@@ -116,31 +116,58 @@ void PrintIf(uint8_t valid, char ch) {
 
 void HandleProbes(VAmethyst * top) {
     // cycle, if1, if2, if3, id, ex, mem, wb
-    printf("%08llu ", simtime / 2);
+    printf("%04llu ", simtime / 2);
     Separator();
-    PrintStage(1, top->Amethyst->probe_if1_pc);
+    PrintStage(1, top->Amethyst->probe_if1_pc, 0);
     Separator();
-    PrintStage(top->Amethyst->probe_if2_valid, top->Amethyst->probe_if2_pc);
+    PrintStage(
+        top->Amethyst->probe_if2_valid,
+        top->Amethyst->probe_if2_pc,
+        0);
     Separator();
-    PrintStage(top->Amethyst->probe_if3_valid, top->Amethyst->probe_if3_pc);
+    PrintStage(
+        top->Amethyst->probe_if3_valid,
+        top->Amethyst->probe_if3_pc,
+        0);
     Separator();
-    PrintStage(top->Amethyst->probe_id_valid, top->Amethyst->probe_id_pc);
+    PrintStage(
+        top->Amethyst->probe_id_valid,
+        top->Amethyst->probe_id_pc,
+        top->Amethyst->probe_id_inst);
     Separator();
-    PrintStage(top->Amethyst->probe_ex_valid, top->Amethyst->probe_ex_pc);
+    PrintStage(
+        top->Amethyst->probe_ex_valid,
+        top->Amethyst->probe_ex_pc,
+        top->Amethyst->probe_ex_inst);
     Separator();
-    PrintStage(top->Amethyst->probe_mem_valid, top->Amethyst->probe_mem_pc);
+    PrintStage(
+        top->Amethyst->probe_mem_valid,
+        top->Amethyst->probe_mem_pc,
+        top->Amethyst->probe_mem_inst);
     Separator();
-    PrintStage(top->Amethyst->probe_wb_valid, top->Amethyst->probe_wb_pc);
+    PrintStage(
+        top->Amethyst->probe_wb_valid,
+        top->Amethyst->probe_wb_pc,
+        top->Amethyst->probe_wb_inst);
     Separator();
     printf(" ");
     PrintIf(top->Amethyst->probe_icache_stall, 'I');
     PrintIf(top->Amethyst->probe_dcache_stall, 'D');
+    PrintIf(top->Amethyst->probe_ex_mem_rd, 'R');
+    PrintIf(top->Amethyst->probe_ex_mem_wr, 'W');
     printf(" ");
     if (top->Amethyst->probe_reg_w_en) {
         printf(
-            "Reg: %02d, Data: %lx",
+            "[WB: Reg: r%02d, Data: 0x%lx]",
             top->Amethyst->probe_reg_w_addr,
             top->Amethyst->probe_reg_w_data);
+    }
+    printf(" ");
+    if (top->Amethyst->probe_dcache_cpu_req_valid) {
+        printf(
+            "[$: Addr: 0x%lx, Read: 0x%lx]",
+            top->Amethyst->probe_dcache_cpu_req_addr,
+            top->Amethyst->probe_dcache_cpu_req_read);
     }
     printf("\n");
 }
@@ -148,7 +175,7 @@ void HandleProbes(VAmethyst * top) {
 int main(int argc, char **argv) {
     Verilated::traceEverOn(true);
 
-    printf(" cycle   | ifetch1  | ifetch2  | ifetch3  |  decode  | execute  |   mem    |    wb    |\n");
+    printf(" cyc | ifetch1        | ifetch2        | ifetch3        |  decode        | execute        |   mem          |    wb          |\n");
 
     uint8_t * mem = new uint8_t[MEMSIZE];
 

@@ -209,7 +209,7 @@ instructions = {
     'sb': Inst.S(Pattern(Opcodes.STORE, 0b000, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
     'sh': Inst.S(Pattern(Opcodes.STORE, 0b001, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
     'sw': Inst.S(Pattern(Opcodes.STORE, 0b010, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
-    'sd': Inst.S(Pattern(Opcodes.STORE, 0b111, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
+    'sd': Inst.S(Pattern(Opcodes.STORE, 0b011, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
 
     #
     # B-Type Instructions
