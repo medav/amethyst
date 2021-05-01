@@ -105,6 +105,42 @@ class ValidSetOperator(Operator):
 def ValidSet(width : int):
     return ValidSetOperator(width)
 
+class DisplayOperator(Operator):
+    def __init__(self, args : list, clock=None, en=None):
+        super().__init__('clocked_display')
+        self.args = args
+
+        if clock is None:
+            self.clock = DefaultClock()
+        else:
+            self.clock = clock
+
+        self.en = en
+
+    def Declare(self):
+        pass
+
+    def Synthesize(self):
+        def ProcessArg(arg):
+            if type(arg) is str:
+                return f'"{arg}"'
+            else:
+                return VName(FilterFrontend(arg))
+
+        args_str = ', '.join(map(ProcessArg, self.args))
+
+        with VAlways([VPosedge(self.clock)]):
+            if self.en is None:
+                VEmitRaw(f'$display({args_str});')
+
+            else:
+                with VIf(FilterFrontend(self.en)):
+                    VEmitRaw(f'$display({args_str});')
+
+@OpGen(cacheable=False)
+def Display(args : list, clock=None, en=None):
+    return DisplayOperator(args, clock=clock, en=en)
+
 class ProbeOperator(Operator):
     """Operator that produces a verilog signal for probing.
 

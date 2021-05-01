@@ -176,21 +176,27 @@ def RegisterFile():
     # Handle the two read ports. If the read address is 0, always read 0.
     #
 
-    with io.r0_addr == 0:
-        io.r0_data <<= 0
-    with otherwise:
-        with io.r0_addr == io.w0_addr:
-            io.r0_data <<= io.w0_data
-        with otherwise:
-            io.r0_data <<= reg_mem.Read(io.r0_addr, io.r0_en)
+    bypass_r0 = (io.r0_addr == io.w0_addr) & io.w0_en
+    bypass_r1 = (io.r1_addr == io.w0_addr) & io.w0_en
 
-    with io.r1_addr == 0:
-        io.r1_data <<= 0
+    bypass_r0_reg = Reg(Bits(1))
+    bypass_r1_reg = Reg(Bits(1))
+
+    bypass_r0_reg <<= bypass_r0
+    bypass_r1_reg <<= bypass_r1
+
+    bypass_data = Reg(Bits(C['core-width']))
+    bypass_data <<= io.w0_data
+
+    with bypass_r0_reg:
+        io.r0_data <<= bypass_data
     with otherwise:
-        with io.r1_addr == io.w0_addr:
-            io.r1_data <<= io.w0_data
-        with otherwise:
-            io.r1_data <<= reg_mem.Read(io.r1_addr, io.r1_en)
+        io.r0_data <<= reg_mem.Read(io.r0_addr, io.r0_en)
+
+    with bypass_r1_reg:
+        io.r1_data <<= bypass_data
+    with otherwise:
+        io.r1_data <<= reg_mem.Read(io.r1_addr, io.r0_en)
 
     #
     # Register writes to x0 are ignored since that register must always read as

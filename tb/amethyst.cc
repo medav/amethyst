@@ -13,6 +13,8 @@
 #define ASSERT(condition) \
     if (!(condition)) { \
         fprintf(stderr, "[%s:%d] Assertion failure: " # condition "\n", __FILE__, __LINE__); \
+        vcd->dump((vluint64_t)simtime++); \
+        vcd->close(); \
         exit(-1); \
     }
 
@@ -29,6 +31,9 @@ typedef struct _ReadResponse {
 
 std::queue<ReadResponse> iqueue;
 std::queue<ReadResponse> dqueue;
+
+VAmethyst * top;
+VerilatedVcdC * vcd;
 
 void HandleIMem(VAmethyst * top, uint8_t * mem) {
     top->io_imem_read_ready = true;
@@ -162,13 +167,13 @@ void HandleProbes(VAmethyst * top) {
             top->Amethyst->probe_reg_w_addr,
             top->Amethyst->probe_reg_w_data);
     }
-    printf(" ");
-    if (top->Amethyst->probe_dcache_cpu_req_valid) {
-        printf(
-            "[$: Addr: 0x%lx, Read: 0x%lx]",
-            top->Amethyst->probe_dcache_cpu_req_addr,
-            top->Amethyst->probe_dcache_cpu_req_read);
-    }
+    // printf(" ");
+    // if (top->Amethyst->probe_dcache_cpu_req_valid) {
+    //     printf(
+    //         "[$: Addr: 0x%lx, Read: 0x%lx]",
+    //         top->Amethyst->probe_dcache_cpu_req_addr,
+    //         top->Amethyst->probe_dcache_cpu_req_read);
+    // }
     printf("\n");
 }
 
@@ -183,8 +188,8 @@ int main(int argc, char **argv) {
     ifs.read((char *)mem, MEMSIZE);
     ifs.close();
 
-    VAmethyst * top = new VAmethyst;
-    VerilatedVcdC * vcd = new VerilatedVcdC;
+    top = new VAmethyst;
+    vcd = new VerilatedVcdC;
 
     top->trace(vcd, 99);
     vcd->open("dump.vcd");
@@ -205,7 +210,7 @@ int main(int argc, char **argv) {
 
     top->io_reset = 0;
 
-    while (simtime < 1000) {
+    while (simtime < 100000) {
         top->io_clock = 0;
         HandleIMem(top, mem);
         HandleDMem(top, mem);

@@ -6,3 +6,4 @@ _init:
     jal main
 _end:
     ebreak
+    j _end

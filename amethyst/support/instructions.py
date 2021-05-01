@@ -47,6 +47,14 @@ class Opcodes(object):
     CUSTOM2 = 0b1011011
     CUSTOM3 = 0b1111011
 
+class AluOp(object):
+    """TODO: document me
+    """
+    width = 2
+    IMM = 0b00
+    REG = 0b01
+    BRANCH = 0b10
+
 @dataclass(frozen=True)
 class Pattern(object):
     """Instruction pattern record.
@@ -117,8 +125,12 @@ class WbCtrl(object):
         return WbCtrl(False, True)
 
     @staticmethod
-    def Mem():
+    def Load():
         return WbCtrl(True, True)
+
+    @staticmethod
+    def Store():
+        return WbCtrl(False, False)
 
     @staticmethod
     def Nop():
@@ -174,53 +186,55 @@ instructions = {
     # R-Type Instructions
     #
 
-    'add': Inst.R(Pattern(Opcodes.OP, 0b000, 0b0000000), ExCtrl(AluSrc.RS2, 0b10), MemCtrl.Nop(), WbCtrl.Reg()),
-    'sub': Inst.R(Pattern(Opcodes.OP, 0b000, 0b0100000), ExCtrl(AluSrc.RS2, 0b10), MemCtrl.Nop(), WbCtrl.Reg()),
-    'sll': Inst.R(Pattern(Opcodes.OP, 0b001, 0b0000000), ExCtrl(AluSrc.RS2, 0b10), MemCtrl.Nop(), WbCtrl.Reg()),
-    'xor': Inst.R(Pattern(Opcodes.OP, 0b100, 0b0000000), ExCtrl(AluSrc.RS2, 0b10), MemCtrl.Nop(), WbCtrl.Reg()),
-    'srl': Inst.R(Pattern(Opcodes.OP, 0b101, 0b0000000), ExCtrl(AluSrc.RS2, 0b10), MemCtrl.Nop(), WbCtrl.Reg()),
-    'or': Inst.R(Pattern(Opcodes.OP, 0b110, 0b0000000), ExCtrl(AluSrc.RS2, 0b10), MemCtrl.Nop(), WbCtrl.Reg()),
-    'and': Inst.R(Pattern(Opcodes.OP, 0b111, 0b0000000), ExCtrl(AluSrc.RS2, 0b10), MemCtrl.Nop(), WbCtrl.Reg()),
+    'add': Inst.R(Pattern(Opcodes.OP, 0b000, 0b0000000), ExCtrl(AluSrc.RS2, AluOp.REG), MemCtrl.Nop(), WbCtrl.Reg()),
+    'sub': Inst.R(Pattern(Opcodes.OP, 0b000, 0b0100000), ExCtrl(AluSrc.RS2, AluOp.REG), MemCtrl.Nop(), WbCtrl.Reg()),
+    'sll': Inst.R(Pattern(Opcodes.OP, 0b001, 0b0000000), ExCtrl(AluSrc.RS2, AluOp.REG), MemCtrl.Nop(), WbCtrl.Reg()),
+    'xor': Inst.R(Pattern(Opcodes.OP, 0b100, 0b0000000), ExCtrl(AluSrc.RS2, AluOp.REG), MemCtrl.Nop(), WbCtrl.Reg()),
+    'srl': Inst.R(Pattern(Opcodes.OP, 0b101, 0b0000000), ExCtrl(AluSrc.RS2, AluOp.REG), MemCtrl.Nop(), WbCtrl.Reg()),
+    'or': Inst.R(Pattern(Opcodes.OP, 0b110, 0b0000000),  ExCtrl(AluSrc.RS2, AluOp.REG), MemCtrl.Nop(), WbCtrl.Reg()),
+    'and': Inst.R(Pattern(Opcodes.OP, 0b111, 0b0000000), ExCtrl(AluSrc.RS2, AluOp.REG), MemCtrl.Nop(), WbCtrl.Reg()),
 
     #
     # I-Type Instructions
     #
 
-    'lb': Inst.I(Pattern(Opcodes.LOAD, 0b000, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lh': Inst.I(Pattern(Opcodes.LOAD, 0b001, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lw': Inst.I(Pattern(Opcodes.LOAD, 0b010, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'ld': Inst.I(Pattern(Opcodes.LOAD, 0b011, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lbu': Inst.I(Pattern(Opcodes.LOAD, 0b100, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lhu': Inst.I(Pattern(Opcodes.LOAD, 0b101, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'lwu': Inst.I(Pattern(Opcodes.LOAD, 0b110, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(False, False, True), WbCtrl.Mem()),
-    'addi': Inst.I(Pattern(Opcodes.OPIMM, 0b000, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'slli': Inst.I(Pattern(Opcodes.OPIMM, 0b001, 0b0000000), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'xori': Inst.I(Pattern(Opcodes.OPIMM, 0b100, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'srli': Inst.I(Pattern(Opcodes.OPIMM, 0b101, 0b0000000), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'srai': Inst.I(Pattern(Opcodes.OPIMM, 0b101, 0b0100000), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'ori': Inst.I(Pattern(Opcodes.OPIMM, 0b110, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'andi': Inst.I(Pattern(Opcodes.OPIMM, 0b111, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl.Nop(), WbCtrl.Reg()),
-    'jalr': Inst.I(Pattern(Opcodes.JALR, 0b000, None), ExCtrl(AluSrc.IMM, 0b00), MemCtrl(True, False, False), WbCtrl.Reg()),
+    'lb': Inst.I(Pattern(Opcodes.LOAD, 0b000, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, False, True), WbCtrl.Load()),
+    'lh': Inst.I(Pattern(Opcodes.LOAD, 0b001, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, False, True), WbCtrl.Load()),
+    'lw': Inst.I(Pattern(Opcodes.LOAD, 0b010, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, False, True), WbCtrl.Load()),
+    'ld': Inst.I(Pattern(Opcodes.LOAD, 0b011, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, False, True), WbCtrl.Load()),
+
+    'lbu': Inst.I(Pattern(Opcodes.LOAD, 0b100, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, False, True), WbCtrl.Load()),
+    'lhu': Inst.I(Pattern(Opcodes.LOAD, 0b101, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, False, True), WbCtrl.Load()),
+    'lwu': Inst.I(Pattern(Opcodes.LOAD, 0b110, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, False, True), WbCtrl.Load()),
+
+    'addi': Inst.I(Pattern(Opcodes.OPIMM, 0b000, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl.Nop(), WbCtrl.Reg()),
+    'slli': Inst.I(Pattern(Opcodes.OPIMM, 0b001, 0b0000000), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl.Nop(), WbCtrl.Reg()),
+    'xori': Inst.I(Pattern(Opcodes.OPIMM, 0b100, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl.Nop(), WbCtrl.Reg()),
+    'srli': Inst.I(Pattern(Opcodes.OPIMM, 0b101, 0b0000000), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl.Nop(), WbCtrl.Reg()),
+    'srai': Inst.I(Pattern(Opcodes.OPIMM, 0b101, 0b0100000), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl.Nop(), WbCtrl.Reg()),
+    'ori': Inst.I(Pattern(Opcodes.OPIMM, 0b110, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl.Nop(), WbCtrl.Reg()),
+    'andi': Inst.I(Pattern(Opcodes.OPIMM, 0b111, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl.Nop(), WbCtrl.Reg()),
+    'jalr': Inst.I(Pattern(Opcodes.JALR, 0b000, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(True, False, False), WbCtrl.Reg()),
 
     #
     # S-Type Instructions
     #
 
-    'sb': Inst.S(Pattern(Opcodes.STORE, 0b000, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
-    'sh': Inst.S(Pattern(Opcodes.STORE, 0b001, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
-    'sw': Inst.S(Pattern(Opcodes.STORE, 0b010, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
-    'sd': Inst.S(Pattern(Opcodes.STORE, 0b011, None), ExCtrl(AluSrc.RS2, 0b00), MemCtrl(False, True, False), WbCtrl.Mem()),
+    'sb': Inst.S(Pattern(Opcodes.STORE, 0b000, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, True, False), WbCtrl.Store()),
+    'sh': Inst.S(Pattern(Opcodes.STORE, 0b001, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, True, False), WbCtrl.Store()),
+    'sw': Inst.S(Pattern(Opcodes.STORE, 0b010, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, True, False), WbCtrl.Store()),
+    'sd': Inst.S(Pattern(Opcodes.STORE, 0b011, None), ExCtrl(AluSrc.IMM, AluOp.IMM), MemCtrl(False, True, False), WbCtrl.Store()),
 
     #
     # B-Type Instructions
     #
 
-    'beq': Inst.B(Pattern(Opcodes.BRANCH, 0b000, None), ExCtrl(AluSrc.RS2, 0b01), MemCtrl(True, False, False), WbCtrl.Nop()),
-    'bne': Inst.B(Pattern(Opcodes.BRANCH, 0b001, None), ExCtrl(AluSrc.RS2, 0b01), MemCtrl(True, False, False), WbCtrl.Nop()),
-    'blt': Inst.B(Pattern(Opcodes.BRANCH, 0b100, None), ExCtrl(AluSrc.RS2, 0b01), MemCtrl(True, False, False), WbCtrl.Nop()),
-    'bge': Inst.B(Pattern(Opcodes.BRANCH, 0b101, None), ExCtrl(AluSrc.RS2, 0b01), MemCtrl(True, False, False), WbCtrl.Nop()),
-    'bltu': Inst.B(Pattern(Opcodes.BRANCH, 0b110, None), ExCtrl(AluSrc.RS2, 0b01), MemCtrl(True, False, False), WbCtrl.Nop()),
-    'bgeu': Inst.B(Pattern(Opcodes.BRANCH, 0b111, None), ExCtrl(AluSrc.RS2, 0b01), MemCtrl(True, False, False), WbCtrl.Nop()),
+    'beq':  Inst.B(Pattern(Opcodes.BRANCH, 0b000, None), ExCtrl(AluSrc.RS2, AluOp.BRANCH), MemCtrl(True, False, False), WbCtrl.Nop()),
+    'bne':  Inst.B(Pattern(Opcodes.BRANCH, 0b001, None), ExCtrl(AluSrc.RS2, AluOp.BRANCH), MemCtrl(True, False, False), WbCtrl.Nop()),
+    'blt':  Inst.B(Pattern(Opcodes.BRANCH, 0b100, None), ExCtrl(AluSrc.RS2, AluOp.BRANCH), MemCtrl(True, False, False), WbCtrl.Nop()),
+    'bge':  Inst.B(Pattern(Opcodes.BRANCH, 0b101, None), ExCtrl(AluSrc.RS2, AluOp.BRANCH), MemCtrl(True, False, False), WbCtrl.Nop()),
+    'bltu': Inst.B(Pattern(Opcodes.BRANCH, 0b110, None), ExCtrl(AluSrc.RS2, AluOp.BRANCH), MemCtrl(True, False, False), WbCtrl.Nop()),
+    'bgeu': Inst.B(Pattern(Opcodes.BRANCH, 0b111, None), ExCtrl(AluSrc.RS2, AluOp.BRANCH), MemCtrl(True, False, False), WbCtrl.Nop()),
 
     #
     # U-Type Instructions

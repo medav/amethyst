@@ -3,7 +3,6 @@
 VERILATOR=verilator
 PYTHON=python3
 CXX=g++
-
 TOP=Amethyst
 
 BUILDDIR=build
@@ -41,7 +40,7 @@ apps:
 	$(MAKE) -C apps/
 
 $(VSRC): $(RTLSRC) | build-dirs
-	$(PYTHON) build.py
+	amethyst-build
 
 $(VSIM): $(TBSRC) $(VSRC) | build-dirs
 	$(VERILATOR) $(VFLAGS) $(VSRC)

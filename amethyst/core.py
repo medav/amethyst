@@ -112,10 +112,12 @@ def Amethyst():
     fwd = Instance(ForwardUnit())
     fwd.ex_rs1 <<= Rs1(id_ex_reg.ctrl.inst)
     fwd.ex_rs2 <<= Rs2(id_ex_reg.ctrl.inst)
+
     fwd.mem_rd <<= Rd(ex_mem_reg.ctrl.inst)
     fwd.wb_rd <<= Rd(mem_wb_reg.ctrl.inst)
-    fwd.mem_reg_write <<= 1
-    fwd.wb_reg_write <<= 1
+
+    fwd.mem_reg_write <<= ex_mem_reg.ctrl.wb.write_reg & ex_mem_reg.ctrl.valid
+    fwd.wb_reg_write <<= mem_wb_reg.ctrl.wb.write_reg & mem_wb_reg.ctrl.valid
 
     hzd = Instance(HazardUnit())
     hzd.ex_mem_read <<= id_ex_reg.ctrl.mem.mem_read
@@ -221,6 +223,7 @@ def Amethyst():
     execute_stage.fwd.select2 <<= fwd.fwd2_select
     execute_stage.fwd.mem_data <<= ex_mem_reg.alu_result
     execute_stage.fwd.wb_data <<= writeback_stage.reg_write.w_data
+    execute_stage.mispred <<= bru.mispred_ex_bypass
 
     dcache.cpu_req <<= execute_stage.dcache.cpu_req
     Probe(execute_stage.dcache.cpu_req.valid, 'dcache_cpu_req_valid')
@@ -250,9 +253,9 @@ def Amethyst():
     PipelineUpdate(
         pipe_reg=mem_wb_reg,
         next_value=next_mem_wb,
-        flush_signal=bru.mispred.valid | dcache.miss_stall,
+        flush_signal=bru.mispred.valid,
         reset_value=mem_wb_bundle_reset,
-        stall_signal=None)
+        stall_signal=dcache.miss_stall)
 
     #
     # B4: Writeback Stage

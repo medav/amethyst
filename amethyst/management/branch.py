@@ -12,11 +12,13 @@ def BranchUnit():
             'target': Bits(C['paddr-width']),
             'is_return': Bits(1),
         }),
+        'mispred_ex_bypass': Output(Bits(1)),
         'mispred': Output(mispred_bundle)
     })
 
     mispred = Reg(mispred_bundle, reset_value=mispred_bundle_reset)
 
+    io.mispred_ex_bypass <<= False
     mispred.valid <<= False
 
     #
@@ -26,6 +28,7 @@ def BranchUnit():
     #
 
     with (io.branch.target != io.ex_pc) & io.branch.valid & ~mispred.valid:
+        io.mispred_ex_bypass <<= True
         mispred.valid <<= True
         mispred.pc <<= io.mem_pc
         mispred.target <<= io.branch.target

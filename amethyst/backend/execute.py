@@ -97,8 +97,6 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
     true_w = Wire(Bits(1))
     true_w <<= 1
 
-    NameSignals(locals())
-
     for inst_spec in alu_instructions:
 
         alu_op0_match = OptionalMatch(true_w, inst_spec.alu_op0, alu_op0)
@@ -108,6 +106,8 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
 
         with alu_op0_match & alu_op1_match & funct3_match & funct7_match:
             alu_inst <<= inst_spec.alu_inst
+
+    NameSignals(locals())
 
 @Module
 def ExecuteStage():
@@ -130,6 +130,7 @@ def ExecuteStage():
             'mem_data': Bits(C['core-width']),
             'wb_data': Bits(C['core-width'])
         }),
+        'mispred': Input(Bits(1)),
         'dcache': Output({
             'cpu_req': cpu_cache_req
         }),
@@ -209,7 +210,8 @@ def ExecuteStage():
 
     io.dcache.cpu_req.valid <<= \
         io.id_ex.ctrl.valid & \
-        (io.id_ex.ctrl.mem.mem_read | io.id_ex.ctrl.mem.mem_write)
+        (io.id_ex.ctrl.mem.mem_read | io.id_ex.ctrl.mem.mem_write) & \
+        ~io.mispred
 
     io.dcache.cpu_req.addr <<= alu.result
     io.dcache.cpu_req.rtype <<= access_rtype.d
