@@ -98,13 +98,13 @@ def AluControl(alu_inst, alu_op, funct7, funct3):
     true_w <<= 1
 
     for inst_spec in alu_instructions:
-
+        alu_op_match = OptionalMatch(true_w, inst_spec.alu_op, alu_op)
         alu_op0_match = OptionalMatch(true_w, inst_spec.alu_op0, alu_op0)
         alu_op1_match = OptionalMatch(true_w, inst_spec.alu_op1, alu_op1)
         funct3_match = OptionalMatch(true_w, inst_spec.funct3, funct3)
         funct7_match = OptionalMatch(true_w, inst_spec.funct7, funct7)
 
-        with alu_op0_match & alu_op1_match & funct3_match & funct7_match:
+        with alu_op_match & alu_op0_match & alu_op1_match & funct3_match & funct7_match:
             alu_inst <<= inst_spec.alu_inst
 
     NameSignals(locals())
@@ -146,6 +146,9 @@ def ExecuteStage():
     #
 
     io.ex_mem.branch_target <<= io.id_ex.ctrl.pc + io.id_ex.imm
+
+    with io.id_ex.ctrl.ex.jalr:
+        io.ex_mem.branch_target <<= alu.result
 
     #
     # Forwarding Logic

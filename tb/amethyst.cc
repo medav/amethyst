@@ -115,11 +115,11 @@ void PrintIf(uint8_t valid, char ch) {
         printf("%c", ch);
     }
     else {
-        printf(" ");
+        printf("-");
     }
 }
 
-void HandleProbes(VAmethyst * top) {
+void PipeView(VAmethyst * top) {
     // cycle, if1, if2, if3, id, ex, mem, wb
     printf("%04llu ", simtime / 2);
     Separator();
@@ -160,10 +160,11 @@ void HandleProbes(VAmethyst * top) {
     PrintIf(top->Amethyst->probe_dcache_stall, 'D');
     PrintIf(top->Amethyst->probe_ex_mem_rd, 'R');
     PrintIf(top->Amethyst->probe_ex_mem_wr, 'W');
+    PrintIf(top->Amethyst->probe_data_hazard, 'H');
     printf(" ");
     if (top->Amethyst->probe_reg_w_en) {
         printf(
-            "[WB: Reg: r%02d, Data: 0x%lx]",
+            "[WB: r%02d <- 0x%lx]",
             top->Amethyst->probe_reg_w_addr,
             top->Amethyst->probe_reg_w_data);
     }
@@ -177,10 +178,21 @@ void HandleProbes(VAmethyst * top) {
     printf("\n");
 }
 
+
+void ITrace(VAmethyst * top) {
+    static uint64_t prev = 0;
+    if (top->Amethyst->probe_wb_valid) {
+        if (top->Amethyst->probe_wb_pc != prev) {
+            printf("%04x\n", top->Amethyst->probe_wb_pc);
+            prev = top->Amethyst->probe_wb_pc;
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     Verilated::traceEverOn(true);
 
-    printf(" cyc | ifetch1        | ifetch2        | ifetch3        |  decode        | execute        |   mem          |    wb          |\n");
+    //printf(" cyc | ifetch1        | ifetch2        | ifetch3        |  decode        | execute        |   mem          |    wb          |\n");
 
     uint8_t * mem = new uint8_t[MEMSIZE];
 
@@ -210,7 +222,7 @@ int main(int argc, char **argv) {
 
     top->io_reset = 0;
 
-    while (simtime < 100000) {
+    while (simtime < 20000) {
         top->io_clock = 0;
         HandleIMem(top, mem);
         HandleDMem(top, mem);
@@ -218,7 +230,8 @@ int main(int argc, char **argv) {
         top->eval();
         vcd->dump((vluint64_t)simtime++);
 
-        HandleProbes(top);
+        PipeView(top);
+        // ITrace(top);
 
         top->io_clock = 1;
 

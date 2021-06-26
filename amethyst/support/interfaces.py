@@ -60,6 +60,7 @@ execute_ctrl_bundle = {
     'alu_op': Bits(2),
     'lui': Bits(1),
     'auipc': Bits(1),
+    'jalr': Bits(1),
     'funct3': Bits(3),
     'funct7': Bits(7)
 }
@@ -69,6 +70,7 @@ execute_ctrl_bundle_reset = {
     'alu_op': 0,
     'lui': False,
     'auipc': False,
+    'jalr': False,
     'funct3': 0,
     'funct7': 0
 }
@@ -87,12 +89,16 @@ alu_flags_reset = {
 
 mem_ctrl_bundle = {
     'branch': Bits(1),
+    'branch_type': Bits(3),
+    'jal': Bits(1),
     'mem_write': Bits(1),
     'mem_read': Bits(1)
 }
 
 mem_ctrl_bundle_reset = {
     'branch': False,
+    'branch_type': 0,
+    'jal': False,
     'mem_write': False,
     'mem_read': False
 }

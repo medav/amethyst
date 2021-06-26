@@ -1,6 +1,24 @@
 from atlas import *
 from ..support import *
 
+branch_types = [
+    BranchType.EQ,
+    BranchType.NEQ,
+    BranchType.LT,
+    BranchType.GEQ,
+    BranchType.LTU,
+    BranchType.GEQU
+]
+
+branch_resolve_table = {
+    BranchType.EQ: lambda flags: flags.zero,
+    BranchType.NEQ: lambda flags: ~flags.zero,
+    BranchType.LT: lambda flags: flags.sign,
+    BranchType.GEQ: lambda flags: ~flags.sign,
+    BranchType.LTU: lambda flags: flags.overflow,
+    BranchType.GEQU: lambda flags: ~flags.overflow,
+}
+
 @Module
 def MemStage():
     """The mem access stage for Geode.
@@ -33,10 +51,19 @@ def MemStage():
     # instructions to be flushed).
     #
 
-    io.branch.valid <<= io.ex_mem.ctrl.valid
-    io.branch.taken <<= io.ex_mem.ctrl.mem.branch
+    is_ctrl_change = io.ex_mem.ctrl.mem.branch | io.ex_mem.ctrl.mem.jal
+    io.branch.valid <<= io.ex_mem.ctrl.valid & is_ctrl_change
 
-    with io.ex_mem.ctrl.mem.branch:
+    taken = Wire(Bits(1))
+    taken <<= False
+    io.branch.taken <<= taken | io.ex_mem.ctrl.mem.jal
+
+    for ty in branch_types:
+        with io.ex_mem.ctrl.mem.branch_type == ty:
+            taken <<= branch_resolve_table[ty](
+                io.ex_mem.alu_flags)
+
+    with (io.ex_mem.ctrl.mem.branch & taken) | io.ex_mem.ctrl.mem.jal:
         io.branch.target <<= io.ex_mem.branch_target
     with otherwise:
         io.branch.target <<= io.ex_mem.ctrl.pc + 4

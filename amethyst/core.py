@@ -14,22 +14,25 @@ from .management.hazard import HazardUnit
 from .management.branch import BranchUnit
 
 def PipelineUpdate(pipe_reg, next_value, flush_signal, reset_value, stall_signal):
-    def HandleStall(pipe_reg):
-        if stall_signal is not None:
-            with ~stall_signal:
-                pipe_reg <<= next_value
+    if flush_signal is None and stall_signal is None:
+        pipe_reg <<= next_value
 
-        else:
-            pipe_reg <<= next_value
-
-    if flush_signal is not None:
+    elif flush_signal is not None and stall_signal is None:
         with flush_signal:
             pipe_reg <<= reset_value
         with otherwise:
-            HandleStall(pipe_reg)
+            pipe_reg <<= next_value
+
+    elif stall_signal is not None and flush_signal is None:
+        with ~stall_signal:
+            pipe_reg <<= next_value
 
     else:
-        HandleStall(pipe_reg)
+        with ~stall_signal:
+            with flush_signal:
+                pipe_reg <<= reset_value
+            with otherwise:
+                pipe_reg <<= next_value
 
 @Module
 def Amethyst():
@@ -120,10 +123,11 @@ def Amethyst():
     fwd.wb_reg_write <<= mem_wb_reg.ctrl.wb.write_reg & mem_wb_reg.ctrl.valid
 
     hzd = Instance(HazardUnit())
-    hzd.ex_mem_read <<= id_ex_reg.ctrl.mem.mem_read
+    hzd.ex_mem_read <<= execute_stage.dcache.cpu_req.valid & execute_stage.dcache.cpu_req.read
     hzd.ex_rd <<= Rd(id_ex_reg.ctrl.inst)
     hzd.id_rs1 <<= Rs1(idecode_stage.id_ex.ctrl.inst)
     hzd.id_rs2 <<= Rs2(idecode_stage.id_ex.ctrl.inst)
+    Probe(hzd.data_hazard, 'data_hazard')
 
     bru = Instance(BranchUnit())
     bru.ex_pc <<= id_ex_reg.ctrl.pc
@@ -142,20 +146,20 @@ def Amethyst():
         next_value=ifetch_stage.if1_if2,
         flush_signal=bru.mispred.valid,
         reset_value=if_bundle_reset,
-        stall_signal=dcache.miss_stall | icache.miss_stall)
+        stall_signal=dcache.miss_stall | icache.miss_stall | hzd.data_hazard)
 
     PipelineUpdate(
         pipe_reg=pc,
         next_value=ifetch_stage.next_pc,
         flush_signal=None,
         reset_value=None,
-        stall_signal=dcache.miss_stall | icache.miss_stall)
+        stall_signal=dcache.miss_stall | icache.miss_stall | hzd.data_hazard)
 
     #
     # IF2: IFetch 2
     #
 
-    icache.cpu_stall <<= dcache.miss_stall
+    icache.cpu_stall <<= dcache.miss_stall | hzd.data_hazard
 
     icache.cpu_req <<= {
         'valid': if1_if2_reg.valid,
@@ -174,7 +178,7 @@ def Amethyst():
         next_value=next_if2_if3,
         flush_signal=bru.mispred.valid,
         reset_value=if_bundle_reset,
-        stall_signal=dcache.miss_stall | icache.miss_stall)
+        stall_signal=dcache.miss_stall | icache.miss_stall | hzd.data_hazard)
 
     #
     # IF3: IFetch 3
@@ -190,7 +194,7 @@ def Amethyst():
         next_value=next_if_id,
         flush_signal=bru.mispred.valid,
         reset_value=if_bundle_reset,
-        stall_signal=dcache.miss_stall)
+        stall_signal=dcache.miss_stall | hzd.data_hazard)
 
     #
     # B1: Decode Stage
@@ -208,7 +212,7 @@ def Amethyst():
     PipelineUpdate(
         pipe_reg=id_ex_reg,
         next_value=idecode_stage.id_ex,
-        flush_signal=bru.mispred.valid,
+        flush_signal=bru.mispred.valid | hzd.data_hazard,
         reset_value=id_ex_bundle_reset,
         stall_signal=dcache.miss_stall)
 

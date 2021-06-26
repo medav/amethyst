@@ -44,10 +44,13 @@ def Control(inst, itype, ctrl):
     ctrl.ex.alu_op <<= 0
     ctrl.ex.lui <<= False
     ctrl.ex.auipc <<= False
+    ctrl.ex.jalr <<= False
     ctrl.ex.funct3 <<= funct3
     ctrl.ex.funct7 <<= funct7
 
     ctrl.mem.branch <<= False
+    ctrl.mem.branch_type <<= 0
+    ctrl.mem.jal <<= False
     ctrl.mem.mem_write <<= False
     ctrl.mem.mem_read <<= False
 
